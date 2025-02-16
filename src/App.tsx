@@ -11,6 +11,8 @@ import Innovation from "./pages/Innovation";
 import Stakeholders from "./pages/Stakeholders";
 import Careers from "./pages/Careers";
 import Contact from "./pages/Contact";
+import Academy from "./pages/Academy";
+import Blogs from "./pages/Blogs";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +31,8 @@ const App = () => (
           <Route path="/stakeholders" element={<Stakeholders />} />
           <Route path="/careers" element={<Careers />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/academy" element={<Academy />} />
+          <Route path="/blogs" element={<Blogs />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
