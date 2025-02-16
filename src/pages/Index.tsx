@@ -2,6 +2,10 @@
 import { useEffect } from "react";
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
+import Statistics from "../components/Statistics";
+import Features from "../components/Features";
+import ProductsPreview from "../components/ProductsPreview";
+import Testimonials from "../components/Testimonials";
 
 const Index = () => {
   useEffect(() => {
@@ -23,6 +27,10 @@ const Index = () => {
     <div className="min-h-screen bg-white">
       <Navbar />
       <Hero />
+      <Statistics />
+      <Features />
+      <ProductsPreview />
+      <Testimonials />
     </div>
   );
 };
