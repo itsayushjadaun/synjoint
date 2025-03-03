@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { GoogleLogin } from '@react-oauth/google';
-import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
 const Login = () => {
   const { login, signup, isLoading, googleLogin } = useAuth();
@@ -28,7 +28,7 @@ const Login = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginEmail || !loginPassword) {
-      alert("Please fill in all fields");
+      toast.error("Please fill in all fields");
       return;
     }
     await login(loginEmail, loginPassword);
@@ -37,18 +37,30 @@ const Login = () => {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!signupName || !signupEmail || !signupPassword || !signupConfirmPassword) {
-      alert("Please fill in all fields");
+      toast.error("Please fill in all fields");
       return;
     }
     if (signupPassword !== signupConfirmPassword) {
-      alert("Passwords don't match!");
+      toast.error("Passwords don't match!");
       return;
     }
     if (signupPassword.length < 6) {
-      alert("Password must be at least 6 characters long");
+      toast.error("Password must be at least 6 characters long");
       return;
     }
     await signup(signupName, signupEmail, signupPassword);
+  };
+
+  const handleGoogleLoginSuccess = (credentialResponse: any) => {
+    console.log("Google login success:", credentialResponse);
+    if (credentialResponse.credential) {
+      googleLogin(credentialResponse.credential);
+    }
+  };
+
+  const handleGoogleLoginError = () => {
+    console.error('Google login failed');
+    toast.error('Google login failed. Please try again.');
   };
 
   return (
@@ -125,14 +137,8 @@ const Login = () => {
                   
                   <div className="mt-6 w-full">
                     <GoogleLogin
-                      onSuccess={(credentialResponse) => {
-                        if (credentialResponse.credential) {
-                          googleLogin(credentialResponse.credential);
-                        }
-                      }}
-                      onError={() => {
-                        console.log('Login Failed');
-                      }}
+                      onSuccess={handleGoogleLoginSuccess}
+                      onError={handleGoogleLoginError}
                       useOneTap
                       theme="outline"
                       shape="rectangular"
@@ -224,14 +230,8 @@ const Login = () => {
                   
                   <div className="mt-6 w-full">
                     <GoogleLogin
-                      onSuccess={(credentialResponse) => {
-                        if (credentialResponse.credential) {
-                          googleLogin(credentialResponse.credential);
-                        }
-                      }}
-                      onError={() => {
-                        console.log('Signup Failed');
-                      }}
+                      onSuccess={handleGoogleLoginSuccess}
+                      onError={handleGoogleLoginError}
                       useOneTap
                       theme="outline"
                       shape="rectangular"

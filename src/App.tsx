@@ -23,8 +23,8 @@ import CreateCareer from "./pages/CreateCareer";
 
 const queryClient = new QueryClient();
 
-// Using a valid demo client ID for testing - replace with your own in production
-const GOOGLE_CLIENT_ID = "707788443358-u05p46nssla3l8tmn58tpo9r5sommgks.apps.googleusercontent.com";
+// Get Google Client ID from environment variable
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "707788443358-u05p46nssla3l8tmn58tpo9r5sommgks.apps.googleusercontent.com";
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

@@ -1,6 +1,10 @@
 
 import { openDB } from 'idb';
 
+// Database version
+const DB_VERSION = 1;
+const DB_NAME = 'synjoint-db';
+
 export interface User {
   id: string;
   email: string;
@@ -30,46 +34,29 @@ export interface CareerPost {
 }
 
 // Initialize the database
-const dbPromise = openDB('synjoint-db', 1, {
+const dbPromise = openDB(DB_NAME, DB_VERSION, {
   upgrade(db) {
+    console.log('Creating or upgrading database...');
+    
     // Create users store
     if (!db.objectStoreNames.contains('users')) {
       const userStore = db.createObjectStore('users', { keyPath: 'id' });
       userStore.createIndex('email', 'email', { unique: true });
+      console.log('Created users store');
     }
     
     // Create blogs store
     if (!db.objectStoreNames.contains('blogs')) {
       const blogStore = db.createObjectStore('blogs', { keyPath: 'id' });
       blogStore.createIndex('authorId', 'authorId');
+      console.log('Created blogs store');
     }
     
     // Create careers store
     if (!db.objectStoreNames.contains('careers')) {
       db.createObjectStore('careers', { keyPath: 'id' });
+      console.log('Created careers store');
     }
-
-    // Add initial users if the database is being created for the first time
-    const transaction = db.transaction('users', 'readwrite');
-    const userStore = transaction.objectStore('users');
-    
-    // Add admin user
-    userStore.put({
-      id: '1',
-      email: 'admin@synjoint.com',
-      name: 'Admin User',
-      role: 'admin',
-      createdAt: new Date().toISOString()
-    });
-    
-    // Add regular user
-    userStore.put({
-      id: '2',
-      email: 'user@example.com',
-      name: 'Regular User',
-      role: 'user',
-      createdAt: new Date().toISOString()
-    });
   }
 });
 
@@ -202,55 +189,90 @@ export const careerDB = {
 
 // Initialize database with some example data if needed
 export const initializeDB = async () => {
-  const db = await dbPromise;
-  
-  // Check if blogs exist already
-  const blogs = await db.getAll('blogs');
-  if (blogs.length === 0) {
-    // Add initial blogs
-    const blogStore = db.transaction('blogs', 'readwrite').store;
-    blogStore.add({
-      id: '1',
-      title: 'The Future of Medical Technology',
-      content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam euismod metus at risus tristique, sit amet luctus justo finibus.',
-      imageUrl: '/lovable-uploads/cef8ce24-f36c-4060-8c3e-41ce14874770.png',
-      author: 'Admin User',
-      authorId: '1',
-      date: '2023-05-15'
-    });
+  try {
+    const db = await dbPromise;
     
-    blogStore.add({
-      id: '2',
-      title: 'Advancements in Joint Replacement',
-      content: 'Nullam euismod metus at risus tristique, sit amet luctus justo finibus. Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-      imageUrl: '/lovable-uploads/67a5affa-62f9-4f9b-96c4-2f2b01963a4e.png',
-      author: 'Admin User',
-      authorId: '1',
-      date: '2023-06-22'
-    });
-  }
-  
-  // Check if careers exist already
-  const careers = await db.getAll('careers');
-  if (careers.length === 0) {
-    // Add initial careers
-    const careerStore = db.transaction('careers', 'readwrite').store;
-    careerStore.add({
-      id: '1',
-      title: 'R&D Engineer',
-      description: 'Join our research and development team to design and develop innovative medical devices.',
-      requirements: ['Bachelor\'s degree in Engineering', '3+ years of experience', 'Knowledge of medical device regulations'],
-      location: 'Mumbai, India',
-      date: '2023-07-10'
-    });
+    // Check if admin user exists
+    const adminUser = await userDB.getByEmail('admin@synjoint.com');
+    if (!adminUser) {
+      console.log('Adding admin user');
+      await userDB.add({
+        id: '1',
+        email: 'admin@synjoint.com',
+        name: 'Admin User',
+        role: 'admin',
+        createdAt: new Date().toISOString()
+      });
+    }
     
-    careerStore.add({
-      id: '2',
-      title: 'Quality Assurance Specialist',
-      description: 'Ensure our products meet the highest quality standards and regulatory requirements.',
-      requirements: ['Bachelor\'s degree in related field', '2+ years in quality assurance', 'Experience with ISO standards'],
-      location: 'Bangalore, India',
-      date: '2023-07-15'
-    });
+    // Check if regular user exists
+    const regularUser = await userDB.getByEmail('user@example.com');
+    if (!regularUser) {
+      console.log('Adding regular user');
+      await userDB.add({
+        id: '2',
+        email: 'user@example.com',
+        name: 'Regular User',
+        role: 'user',
+        createdAt: new Date().toISOString()
+      });
+    }
+    
+    // Check if blogs exist already
+    const blogs = await db.getAll('blogs');
+    if (blogs.length === 0) {
+      // Add initial blogs
+      console.log('Adding sample blog posts');
+      const blogStore = db.transaction('blogs', 'readwrite').store;
+      await blogStore.add({
+        id: '1',
+        title: 'The Future of Medical Technology',
+        content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam euismod metus at risus tristique, sit amet luctus justo finibus.',
+        imageUrl: '/lovable-uploads/cef8ce24-f36c-4060-8c3e-41ce14874770.png',
+        author: 'Admin User',
+        authorId: '1',
+        date: '2023-05-15'
+      });
+      
+      await blogStore.add({
+        id: '2',
+        title: 'Advancements in Joint Replacement',
+        content: 'Nullam euismod metus at risus tristique, sit amet luctus justo finibus. Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        imageUrl: '/lovable-uploads/67a5affa-62f9-4f9b-96c4-2f2b01963a4e.png',
+        author: 'Admin User',
+        authorId: '1',
+        date: '2023-06-22'
+      });
+    }
+    
+    // Check if careers exist already
+    const careers = await db.getAll('careers');
+    if (careers.length === 0) {
+      // Add initial careers
+      console.log('Adding sample career posts');
+      const careerStore = db.transaction('careers', 'readwrite').store;
+      await careerStore.add({
+        id: '1',
+        title: 'R&D Engineer',
+        description: 'Join our research and development team to design and develop innovative medical devices.',
+        requirements: ['Bachelor\'s degree in Engineering', '3+ years of experience', 'Knowledge of medical device regulations'],
+        location: 'Mumbai, India',
+        date: '2023-07-10'
+      });
+      
+      await careerStore.add({
+        id: '2',
+        title: 'Quality Assurance Specialist',
+        description: 'Ensure our products meet the highest quality standards and regulatory requirements.',
+        requirements: ['Bachelor\'s degree in related field', '2+ years in quality assurance', 'Experience with ISO standards'],
+        location: 'Bangalore, India',
+        date: '2023-07-15'
+      });
+    }
+    
+    console.log('Database initialization complete');
+  } catch (error) {
+    console.error('Error initializing database:', error);
+    throw error;
   }
 };
