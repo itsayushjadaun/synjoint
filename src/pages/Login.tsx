@@ -8,9 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { useGoogleLogin, GoogleLogin } from '@react-oauth/google';
 
 const Login = () => {
-  const { login, signup, isLoading } = useAuth();
+  const { login, signup, isLoading, googleLogin } = useAuth();
   
   // Login form state
   const [loginEmail, setLoginEmail] = useState("");
@@ -88,7 +90,7 @@ const Login = () => {
                     />
                   </div>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="flex flex-col">
                   <Button 
                     type="submit" 
                     className="w-full bg-synjoint-blue hover:bg-synjoint-blue/90"
@@ -96,6 +98,36 @@ const Login = () => {
                   >
                     {isLoading ? "Signing in..." : "Sign In"}
                   </Button>
+                  
+                  <div className="relative mt-6 w-full">
+                    <div className="absolute inset-0 flex items-center">
+                      <Separator className="w-full" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-card px-2 text-muted-foreground">
+                        Or continue with
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6 w-full">
+                    <GoogleLogin
+                      onSuccess={(credentialResponse) => {
+                        if (credentialResponse.credential) {
+                          googleLogin(credentialResponse.credential);
+                        }
+                      }}
+                      onError={() => {
+                        console.log('Login Failed');
+                      }}
+                      useOneTap
+                      theme="outline"
+                      shape="rectangular"
+                      width="100%"
+                      text="signin_with"
+                      locale="en"
+                    />
+                  </div>
                 </CardFooter>
               </form>
             </Card>
@@ -154,7 +186,7 @@ const Login = () => {
                     />
                   </div>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="flex flex-col">
                   <Button 
                     type="submit" 
                     className="w-full bg-synjoint-blue hover:bg-synjoint-blue/90"
@@ -162,6 +194,36 @@ const Login = () => {
                   >
                     {isLoading ? "Creating Account..." : "Create Account"}
                   </Button>
+                  
+                  <div className="relative mt-6 w-full">
+                    <div className="absolute inset-0 flex items-center">
+                      <Separator className="w-full" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-card px-2 text-muted-foreground">
+                        Or continue with
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6 w-full">
+                    <GoogleLogin
+                      onSuccess={(credentialResponse) => {
+                        if (credentialResponse.credential) {
+                          googleLogin(credentialResponse.credential);
+                        }
+                      }}
+                      onError={() => {
+                        console.log('Signup Failed');
+                      }}
+                      useOneTap
+                      theme="outline"
+                      shape="rectangular"
+                      width="100%"
+                      text="signup_with"
+                      locale="en"
+                    />
+                  </div>
                 </CardFooter>
               </form>
             </Card>

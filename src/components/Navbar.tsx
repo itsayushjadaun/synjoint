@@ -1,13 +1,15 @@
 
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Menu, X, Search, User, LogOut } from "lucide-react";
+import { Menu, X, Search, User, LogOut, FileText, Briefcase } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -76,6 +78,38 @@ const Navbar = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>{user?.name}</DropdownMenuLabel>
+                  <DropdownMenuLabel className="text-xs text-gray-500">{user?.email}</DropdownMenuLabel>
+                  <DropdownMenuLabel className="text-xs font-semibold bg-gray-100 rounded px-2 py-1">
+                    {user?.role === 'admin' ? 'Admin' : 'User'}
+                  </DropdownMenuLabel>
+                  
+                  <DropdownMenuSeparator />
+                  
+                  {user?.role === 'admin' && (
+                    <>
+                      <DropdownMenuItem className="cursor-pointer">
+                        <Link to="/admin" className="flex items-center w-full">
+                          <User className="h-4 w-4 mr-2" />
+                          Admin Dashboard
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="cursor-pointer">
+                        <Link to="/admin/create-blog" className="flex items-center w-full">
+                          <FileText className="h-4 w-4 mr-2" />
+                          Create Blog Post
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="cursor-pointer">
+                        <Link to="/admin/create-career" className="flex items-center w-full">
+                          <Briefcase className="h-4 w-4 mr-2" />
+                          Create Career Post
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  
                   <DropdownMenuItem className="cursor-pointer" onClick={logout}>
                     <LogOut className="h-4 w-4 mr-2" />
                     Logout

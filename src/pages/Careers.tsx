@@ -1,20 +1,46 @@
 
 import { motion } from "framer-motion";
 import Navbar from "../components/Navbar";
+import CareerCard from "../components/CareerCard";
+import { useAuth } from "../context/AuthContext";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { PlusCircle } from "lucide-react";
 
 const Careers = () => {
+  const { careers, user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
-      <div className="pt-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <motion.div
+      <div className="pt-32 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-16">
+        <div className="flex justify-between items-center mb-8">
+          <motion.h1 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-4xl font-bold text-gray-900"
+          >
+            Career Opportunities
+          </motion.h1>
+          
+          {isAdmin && (
+            <Link to="/admin/create-career">
+              <Button className="bg-synjoint-blue hover:bg-synjoint-blue/90">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Post New Job
+              </Button>
+            </Link>
+          )}
+        </div>
+        
+        <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="py-12"
+          className="py-6"
         >
-          <h1 className="text-4xl font-bold text-gray-900 mb-8">Careers at Synjoint</h1>
-          
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
             <div className="lg:col-span-2">
               <h2 className="text-2xl font-semibold text-synjoint-blue mb-6">Join Our Team</h2>
@@ -24,25 +50,24 @@ const Careers = () => {
                 solutions that improve lives.
               </p>
               
-              <div className="space-y-6">
-                <div className="bg-white rounded-lg shadow-lg p-6">
-                  <h3 className="text-xl font-semibold text-synjoint-orange mb-4">Current Openings</h3>
-                  <div className="space-y-4">
-                    <div className="border-b pb-4">
-                      <h4 className="font-semibold text-gray-800">R&D Engineer</h4>
-                      <p className="text-gray-600 mt-2">
-                        Join our research and development team to design and develop innovative medical devices.
-                      </p>
-                    </div>
-                    <div className="border-b pb-4">
-                      <h4 className="font-semibold text-gray-800">Quality Assurance Specialist</h4>
-                      <p className="text-gray-600 mt-2">
-                        Ensure our products meet the highest quality standards and regulatory requirements.
-                      </p>
-                    </div>
-                  </div>
+              {careers.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {careers.map((career) => (
+                    <motion.div
+                      key={career.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: 0.3 }}
+                    >
+                      <CareerCard {...career} />
+                    </motion.div>
+                  ))}
                 </div>
-              </div>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-gray-600">No career opportunities available at the moment.</p>
+                </div>
+              )}
             </div>
             
             <div>
