@@ -2,7 +2,7 @@ import { openDB } from 'idb';
 
 // Database version
 const DB_VERSION = 1;
-const DB_NAME = 'synjoint-db';
+const DB_NAME = 'synjoint';
 
 export interface User {
   id: string;
