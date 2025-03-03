@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
@@ -29,28 +28,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [careers, setCareers] = useState<CareerPost[]>([]);
   const navigate = useNavigate();
 
-  // Initialize database and load data
   useEffect(() => {
     const initializeData = async () => {
       try {
         setIsLoading(true);
         await initializeDB();
         
-        // Check if user is logged in from localStorage
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
           const parsedUser = JSON.parse(storedUser);
-          // Verify the user exists in the database
           const dbUser = await userDB.get(parsedUser.id);
           if (dbUser) {
             setUser(dbUser);
           } else {
-            // User doesn't exist in db, remove from localStorage
             localStorage.removeItem('user');
           }
         }
         
-        // Load blogs and careers
         await refreshBlogs();
         await refreshCareers();
       } catch (error) {
@@ -64,7 +58,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     initializeData();
   }, []);
 
-  // Load blogs from the database
   const refreshBlogs = async () => {
     try {
       const dbBlogs = await blogDB.getAll();
@@ -75,7 +68,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Load careers from the database
   const refreshCareers = async () => {
     try {
       const dbCareers = await careerDB.getAll();
@@ -86,44 +78,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // User login with email and password
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Simulate a network delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // In a real app, you would hash passwords and compare hashes
-      // Here we're doing a simple check for demo purposes
-      if (email === 'admin@synjoint.com' && password === 'password') {
-        const user = await userDB.getByEmail('admin@synjoint.com');
-        if (user) {
-          setUser(user);
-          localStorage.setItem('user', JSON.stringify(user));
-          toast.success("Login successful!");
-          navigate('/');
+      const user = await userDB.getByEmail(email);
+      
+      if (user && user.password === password) {
+        if (typeof user.count === 'number') {
+          await userDB.update({
+            ...user,
+            count: user.count + 1
+          });
         }
-      } else if (email === 'user@example.com' && password === 'password') {
-        const user = await userDB.getByEmail('user@example.com');
-        if (user) {
-          setUser(user);
-          localStorage.setItem('user', JSON.stringify(user));
-          toast.success("Login successful!");
-          navigate('/');
-        }
+        
+        setUser(user);
+        localStorage.setItem('user', JSON.stringify(user));
+        toast.success("Login successful!");
+        navigate('/');
       } else {
-        // Check if user exists in database
-        const user = await userDB.getByEmail(email);
-        if (user) {
-          // In a real app, you would verify the password correctly
-          // This is just for demo purposes
-          setUser(user);
-          localStorage.setItem('user', JSON.stringify(user));
-          toast.success("Login successful!");
-          navigate('/');
-        } else {
-          toast.error("Invalid credentials. Try using admin@synjoint.com / password");
-        }
+        toast.error("Invalid credentials. Please check your email and password.");
       }
     } catch (error) {
       toast.error("Login failed. Please try again.");
@@ -133,33 +108,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Google login
   const googleLogin = async (credential: string) => {
     setIsLoading(true);
     try {
-      // In a real app, you would validate the credential on your server
-      // Here we'll decode the JWT to get the user info
       const payload = JSON.parse(atob(credential.split('.')[1]));
       console.log("Google credential payload:", payload);
       
-      // Check if the user already exists
       let existingUser = await userDB.getByEmail(payload.email);
       
       if (existingUser) {
-        // Update user picture if it changed
+        const updates: Partial<User> & { id: string } = {
+          ...existingUser,
+          count: (existingUser.count || 0) + 1
+        };
+        
         if (existingUser.picture !== payload.picture) {
-          await userDB.update({
-            ...existingUser,
-            picture: payload.picture
-          });
-          existingUser = await userDB.get(existingUser.id);
+          updates.picture = payload.picture;
         }
+        
+        await userDB.update(updates);
+        existingUser = await userDB.get(existingUser.id);
         
         setUser(existingUser!);
         localStorage.setItem('user', JSON.stringify(existingUser));
       } else {
-        // Create a new user
-        // Check if the email belongs to admin domain
         const isAdmin = payload.email === 'admin@synjoint.com' || payload.email?.endsWith('@synjoint.com');
         
         const newUser: User = {
@@ -168,6 +140,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           name: payload.name,
           picture: payload.picture,
           role: isAdmin ? 'admin' : 'user',
+          count: 1,
           createdAt: new Date().toISOString()
         };
         
@@ -186,26 +159,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // User signup
   const signup = async (name: string, email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Check if user already exists
       const existingUser = await userDB.getByEmail(email);
       if (existingUser) {
         toast.error("A user with this email already exists");
         return;
       }
       
-      // In a real app, you would hash the password
-      // Check if email is for admin domain
       const isAdmin = email.endsWith('@synjoint.com');
       
       const newUser: User = {
         id: Date.now().toString(),
         email,
         name,
+        password,
         role: isAdmin ? 'admin' : 'user',
+        count: 1,
         createdAt: new Date().toISOString()
       };
       
@@ -222,7 +193,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // User logout
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
@@ -230,7 +200,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     navigate('/');
   };
 
-  // Add a new blog post
   const addBlog = async (blog: Omit<BlogPost, 'id' | 'author' | 'authorId' | 'date'>) => {
     if (!user || user.role !== 'admin') {
       toast.error("Only admins can add blog posts");
@@ -256,7 +225,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Add a new career post
   const addCareer = async (career: Omit<CareerPost, 'id' | 'date'>) => {
     if (!user || user.role !== 'admin') {
       toast.error("Only admins can add career postings");

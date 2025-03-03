@@ -1,4 +1,3 @@
-
 import { openDB } from 'idb';
 
 // Database version
@@ -11,6 +10,8 @@ export interface User {
   name: string;
   role: 'user' | 'admin';
   picture?: string;
+  password?: string;
+  count?: number;
   createdAt: string;
 }
 
@@ -77,6 +78,10 @@ export const userDB = {
   },
   
   async add(user: User): Promise<string> {
+    if (user.count === undefined) {
+      user.count = 1;
+    }
+    
     await (await dbPromise).put('users', user);
     return user.id;
   },
@@ -201,6 +206,8 @@ export const initializeDB = async () => {
         email: 'admin@synjoint.com',
         name: 'Admin User',
         role: 'admin',
+        password: 'password',
+        count: 1,
         createdAt: new Date().toISOString()
       });
     }
@@ -214,6 +221,8 @@ export const initializeDB = async () => {
         email: 'user@example.com',
         name: 'Regular User',
         role: 'user',
+        password: 'password',
+        count: 1,
         createdAt: new Date().toISOString()
       });
     }
