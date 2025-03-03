@@ -23,9 +23,12 @@ import CreateCareer from "./pages/CreateCareer";
 
 const queryClient = new QueryClient();
 
+// Using a valid demo client ID for testing - replace with your own in production
+const GOOGLE_CLIENT_ID = "707788443358-u05p46nssla3l8tmn58tpo9r5sommgks.apps.googleusercontent.com";
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
       <TooltipProvider>
         <Toaster />
         <Sonner />

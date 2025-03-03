@@ -2,32 +2,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
-
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: 'user' | 'admin';
-  picture?: string;
-}
-
-interface BlogPost {
-  id: string;
-  title: string;
-  content: string;
-  imageUrl: string;
-  author: string;
-  date: string;
-}
-
-interface CareerPost {
-  id: string;
-  title: string;
-  description: string;
-  requirements: string[];
-  location: string;
-  date: string;
-}
+import { User, BlogPost, CareerPost, userDB, blogDB, careerDB, initializeDB } from '../utils/db';
 
 interface AuthContextType {
   user: User | null;
@@ -39,50 +14,13 @@ interface AuthContextType {
   googleLogin: (credential: string) => Promise<void>;
   blogs: BlogPost[];
   careers: CareerPost[];
-  addBlog: (blog: Omit<BlogPost, 'id' | 'author' | 'date'>) => void;
-  addCareer: (career: Omit<CareerPost, 'id' | 'date'>) => void;
+  addBlog: (blog: Omit<BlogPost, 'id' | 'author' | 'authorId' | 'date'>) => Promise<void>;
+  addCareer: (career: Omit<CareerPost, 'id' | 'date'>) => Promise<void>;
+  refreshBlogs: () => Promise<void>;
+  refreshCareers: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Mock data for blogs and careers
-const initialBlogs: BlogPost[] = [
-  {
-    id: '1',
-    title: 'The Future of Medical Technology',
-    content: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam euismod metus at risus tristique, sit amet luctus justo finibus.',
-    imageUrl: '/lovable-uploads/cef8ce24-f36c-4060-8c3e-41ce14874770.png',
-    author: 'Admin User',
-    date: '2023-05-15'
-  },
-  {
-    id: '2',
-    title: 'Advancements in Joint Replacement',
-    content: 'Nullam euismod metus at risus tristique, sit amet luctus justo finibus. Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-    imageUrl: '/lovable-uploads/67a5affa-62f9-4f9b-96c4-2f2b01963a4e.png',
-    author: 'Admin User',
-    date: '2023-06-22'
-  }
-];
-
-const initialCareers: CareerPost[] = [
-  {
-    id: '1',
-    title: 'R&D Engineer',
-    description: 'Join our research and development team to design and develop innovative medical devices.',
-    requirements: ['Bachelor\'s degree in Engineering', '3+ years of experience', 'Knowledge of medical device regulations'],
-    location: 'Mumbai, India',
-    date: '2023-07-10'
-  },
-  {
-    id: '2',
-    title: 'Quality Assurance Specialist',
-    description: 'Ensure our products meet the highest quality standards and regulatory requirements.',
-    requirements: ['Bachelor\'s degree in related field', '2+ years in quality assurance', 'Experience with ISO standards'],
-    location: 'Bangalore, India',
-    date: '2023-07-15'
-  }
-];
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -91,66 +29,101 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [careers, setCareers] = useState<CareerPost[]>([]);
   const navigate = useNavigate();
 
-  // Check if user is already logged in and load data
+  // Initialize database and load data
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    const initializeData = async () => {
+      try {
+        setIsLoading(true);
+        await initializeDB();
+        
+        // Check if user is logged in from localStorage
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+          const parsedUser = JSON.parse(storedUser);
+          // Verify the user exists in the database
+          const dbUser = await userDB.get(parsedUser.id);
+          if (dbUser) {
+            setUser(dbUser);
+          } else {
+            // User doesn't exist in db, remove from localStorage
+            localStorage.removeItem('user');
+          }
+        }
+        
+        // Load blogs and careers
+        await refreshBlogs();
+        await refreshCareers();
+      } catch (error) {
+        console.error('Error initializing data:', error);
+        toast.error('There was an error loading data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
     
-    // Load blogs and careers from localStorage or use initial data
-    const storedBlogs = localStorage.getItem('blogs');
-    const storedCareers = localStorage.getItem('careers');
-    
-    if (storedBlogs) {
-      setBlogs(JSON.parse(storedBlogs));
-    } else {
-      setBlogs(initialBlogs);
-      localStorage.setItem('blogs', JSON.stringify(initialBlogs));
-    }
-    
-    if (storedCareers) {
-      setCareers(JSON.parse(storedCareers));
-    } else {
-      setCareers(initialCareers);
-      localStorage.setItem('careers', JSON.stringify(initialCareers));
-    }
-    
-    setIsLoading(false);
+    initializeData();
   }, []);
 
-  // Mock login function
+  // Load blogs from the database
+  const refreshBlogs = async () => {
+    try {
+      const dbBlogs = await blogDB.getAll();
+      setBlogs(dbBlogs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    } catch (error) {
+      console.error('Error loading blogs:', error);
+      toast.error('Failed to load blog posts');
+    }
+  };
+
+  // Load careers from the database
+  const refreshCareers = async () => {
+    try {
+      const dbCareers = await careerDB.getAll();
+      setCareers(dbCareers.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    } catch (error) {
+      console.error('Error loading careers:', error);
+      toast.error('Failed to load career posts');
+    }
+  };
+
+  // User login with email and password
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Simulate API call
+      // Simulate a network delay
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Mock validation
+      // In a real app, you would hash passwords and compare hashes
+      // Here we're doing a simple check for demo purposes
       if (email === 'admin@synjoint.com' && password === 'password') {
-        const user = {
-          id: '1',
-          email: 'admin@synjoint.com',
-          name: 'Admin User',
-          role: 'admin' as const
-        };
-        setUser(user);
-        localStorage.setItem('user', JSON.stringify(user));
-        toast.success("Login successful!");
-        navigate('/');
+        const user = await userDB.getByEmail('admin@synjoint.com');
+        if (user) {
+          setUser(user);
+          localStorage.setItem('user', JSON.stringify(user));
+          toast.success("Login successful!");
+          navigate('/');
+        }
       } else if (email === 'user@example.com' && password === 'password') {
-        const user = {
-          id: '2',
-          email: 'user@example.com',
-          name: 'Regular User',
-          role: 'user' as const
-        };
-        setUser(user);
-        localStorage.setItem('user', JSON.stringify(user));
-        toast.success("Login successful!");
-        navigate('/');
+        const user = await userDB.getByEmail('user@example.com');
+        if (user) {
+          setUser(user);
+          localStorage.setItem('user', JSON.stringify(user));
+          toast.success("Login successful!");
+          navigate('/');
+        }
       } else {
-        toast.error("Invalid credentials. Try using admin@synjoint.com / password");
+        // Check if user exists in database
+        const user = await userDB.getByEmail(email);
+        if (user) {
+          // In a real app, you would verify the password correctly
+          // This is just for demo purposes
+          setUser(user);
+          localStorage.setItem('user', JSON.stringify(user));
+          toast.success("Login successful!");
+          navigate('/');
+        } else {
+          toast.error("Invalid credentials. Try using admin@synjoint.com / password");
+        }
       }
     } catch (error) {
       toast.error("Login failed. Please try again.");
@@ -160,7 +133,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Google login function
+  // Google login
   const googleLogin = async (credential: string) => {
     setIsLoading(true);
     try {
@@ -169,19 +142,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const payload = JSON.parse(atob(credential.split('.')[1]));
       console.log("Google credential payload:", payload);
       
-      // Check if the email belongs to admin domain
-      const isAdmin = payload.email === 'admin@synjoint.com' || payload.email?.endsWith('@synjoint.com');
+      // Check if the user already exists
+      let existingUser = await userDB.getByEmail(payload.email);
       
-      const user: User = {
-        id: payload.sub,
-        email: payload.email,
-        name: payload.name,
-        picture: payload.picture,
-        role: isAdmin ? 'admin' : 'user'
-      };
+      if (existingUser) {
+        // Update user picture if it changed
+        if (existingUser.picture !== payload.picture) {
+          await userDB.update({
+            ...existingUser,
+            picture: payload.picture
+          });
+          existingUser = await userDB.get(existingUser.id);
+        }
+        
+        setUser(existingUser!);
+        localStorage.setItem('user', JSON.stringify(existingUser));
+      } else {
+        // Create a new user
+        // Check if the email belongs to admin domain
+        const isAdmin = payload.email === 'admin@synjoint.com' || payload.email?.endsWith('@synjoint.com');
+        
+        const newUser: User = {
+          id: payload.sub || Date.now().toString(),
+          email: payload.email,
+          name: payload.name,
+          picture: payload.picture,
+          role: isAdmin ? 'admin' : 'user',
+          createdAt: new Date().toISOString()
+        };
+        
+        await userDB.add(newUser);
+        setUser(newUser);
+        localStorage.setItem('user', JSON.stringify(newUser));
+      }
       
-      setUser(user);
-      localStorage.setItem('user', JSON.stringify(user));
       toast.success("Google login successful!");
       navigate('/');
     } catch (error) {
@@ -192,25 +186,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  // Mock signup function
+  // User signup
   const signup = async (name: string, email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Check if user already exists
+      const existingUser = await userDB.getByEmail(email);
+      if (existingUser) {
+        toast.error("A user with this email already exists");
+        return;
+      }
       
+      // In a real app, you would hash the password
       // Check if email is for admin domain
       const isAdmin = email.endsWith('@synjoint.com');
       
-      const user = {
+      const newUser: User = {
         id: Date.now().toString(),
         email,
         name,
-        role: isAdmin ? 'admin' as const : 'user' as const
+        role: isAdmin ? 'admin' : 'user',
+        createdAt: new Date().toISOString()
       };
       
-      setUser(user);
-      localStorage.setItem('user', JSON.stringify(user));
+      await userDB.add(newUser);
+      setUser(newUser);
+      localStorage.setItem('user', JSON.stringify(newUser));
       toast.success("Account created successfully!");
       navigate('/');
     } catch (error) {
@@ -221,6 +222,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // User logout
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
@@ -228,45 +230,54 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     navigate('/');
   };
 
-  // Function to add a new blog post
-  const addBlog = (blog: Omit<BlogPost, 'id' | 'author' | 'date'>) => {
+  // Add a new blog post
+  const addBlog = async (blog: Omit<BlogPost, 'id' | 'author' | 'authorId' | 'date'>) => {
     if (!user || user.role !== 'admin') {
       toast.error("Only admins can add blog posts");
       return;
     }
     
-    const newBlog: BlogPost = {
-      ...blog,
-      id: Date.now().toString(),
-      author: user.name,
-      date: new Date().toISOString().split('T')[0]
-    };
-    
-    const updatedBlogs = [...blogs, newBlog];
-    setBlogs(updatedBlogs);
-    localStorage.setItem('blogs', JSON.stringify(updatedBlogs));
-    toast.success("Blog post created successfully!");
-    navigate('/blogs');
+    try {
+      const newBlog: BlogPost = {
+        ...blog,
+        id: Date.now().toString(),
+        author: user.name,
+        authorId: user.id,
+        date: new Date().toISOString().split('T')[0]
+      };
+      
+      await blogDB.add(newBlog);
+      await refreshBlogs();
+      toast.success("Blog post created successfully!");
+      navigate('/blogs');
+    } catch (error) {
+      console.error("Error adding blog:", error);
+      toast.error("Failed to create blog post");
+    }
   };
 
-  // Function to add a new career post
-  const addCareer = (career: Omit<CareerPost, 'id' | 'date'>) => {
+  // Add a new career post
+  const addCareer = async (career: Omit<CareerPost, 'id' | 'date'>) => {
     if (!user || user.role !== 'admin') {
       toast.error("Only admins can add career postings");
       return;
     }
     
-    const newCareer: CareerPost = {
-      ...career,
-      id: Date.now().toString(),
-      date: new Date().toISOString().split('T')[0]
-    };
-    
-    const updatedCareers = [...careers, newCareer];
-    setCareers(updatedCareers);
-    localStorage.setItem('careers', JSON.stringify(updatedCareers));
-    toast.success("Career posting created successfully!");
-    navigate('/careers');
+    try {
+      const newCareer: CareerPost = {
+        ...career,
+        id: Date.now().toString(),
+        date: new Date().toISOString().split('T')[0]
+      };
+      
+      await careerDB.add(newCareer);
+      await refreshCareers();
+      toast.success("Career posting created successfully!");
+      navigate('/careers');
+    } catch (error) {
+      console.error("Error adding career:", error);
+      toast.error("Failed to create career posting");
+    }
   };
 
   return (
@@ -281,7 +292,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       blogs,
       careers,
       addBlog,
-      addCareer
+      addCareer,
+      refreshBlogs,
+      refreshCareers
     }}>
       {children}
     </AuthContext.Provider>

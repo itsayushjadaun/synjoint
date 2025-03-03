@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useGoogleLogin, GoogleLogin } from '@react-oauth/google';
+import { GoogleLogin } from '@react-oauth/google';
+import { Textarea } from "@/components/ui/textarea";
 
 const Login = () => {
   const { login, signup, isLoading, googleLogin } = useAuth();
@@ -26,13 +27,25 @@ const Login = () => {
   
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!loginEmail || !loginPassword) {
+      alert("Please fill in all fields");
+      return;
+    }
     await login(loginEmail, loginPassword);
   };
   
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!signupName || !signupEmail || !signupPassword || !signupConfirmPassword) {
+      alert("Please fill in all fields");
+      return;
+    }
     if (signupPassword !== signupConfirmPassword) {
       alert("Passwords don't match!");
+      return;
+    }
+    if (signupPassword.length < 6) {
+      alert("Password must be at least 6 characters long");
       return;
     }
     await signup(signupName, signupEmail, signupPassword);
@@ -164,6 +177,9 @@ const Login = () => {
                       onChange={(e) => setSignupEmail(e.target.value)}
                       required
                     />
+                    <p className="text-xs text-gray-500">
+                      Note: Emails with @synjoint.com domain will be granted admin privileges.
+                    </p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Password</Label>
