@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
-import { User, BlogPost, CareerPost, userDB, blogDB, careerDB, initializeDB } from '../utils/db';
+import { User, BlogPost, CareerPost, userDB, blogDB, careerDB, initializeDB, debugDB } from '../utils/db';
 
 interface AuthContextType {
   user: User | null;
@@ -33,6 +33,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         setIsLoading(true);
         await initializeDB();
+        
+        await debugDB();
         
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
@@ -84,6 +86,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       const user = await userDB.getByEmail(email);
+      console.log('Login attempt for user:', email, 'Found:', user);
       
       if (user && user.password === password) {
         if (typeof user.count === 'number') {
@@ -115,6 +118,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.log("Google credential payload:", payload);
       
       let existingUser = await userDB.getByEmail(payload.email);
+      console.log("Google login check - Existing user:", existingUser);
       
       if (existingUser) {
         const updates: Partial<User> & { id: string } = {
@@ -144,7 +148,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           createdAt: new Date().toISOString()
         };
         
+        console.log("Creating new user from Google login:", newUser);
         await userDB.add(newUser);
+        
+        const savedUser = await userDB.getByEmail(newUser.email);
+        console.log("Verified user was saved:", savedUser);
+        
         setUser(newUser);
         localStorage.setItem('user', JSON.stringify(newUser));
       }
@@ -163,6 +172,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     try {
       const existingUser = await userDB.getByEmail(email);
+      console.log("Signup check - Existing user with email:", email, existingUser);
+      
       if (existingUser) {
         toast.error("A user with this email already exists");
         return;
@@ -180,7 +191,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         createdAt: new Date().toISOString()
       };
       
+      console.log("Creating new user from signup:", newUser);
       await userDB.add(newUser);
+      
+      const savedUser = await userDB.getByEmail(email);
+      console.log("Verified user was saved:", savedUser);
+      
+      if (!savedUser) {
+        throw new Error("Failed to save user to database");
+      }
+      
       setUser(newUser);
       localStorage.setItem('user', JSON.stringify(newUser));
       toast.success("Account created successfully!");

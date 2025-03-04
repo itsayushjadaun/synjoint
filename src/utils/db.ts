@@ -1,3 +1,4 @@
+
 import { openDB } from 'idb';
 
 // Database version
@@ -61,51 +62,104 @@ const dbPromise = openDB(DB_NAME, DB_VERSION, {
   }
 });
 
+// Debug helper to inspect database
+export const debugDB = async () => {
+  try {
+    const db = await dbPromise;
+    const tx = db.transaction('users', 'readonly');
+    const users = await tx.store.getAll();
+    console.log('All users in database:', users);
+    return users;
+  } catch (error) {
+    console.error('Error debugging database:', error);
+    return [];
+  }
+};
+
 // User management
 export const userDB = {
   async getAll(): Promise<User[]> {
-    return (await dbPromise).getAll('users');
+    try {
+      return (await dbPromise).getAll('users');
+    } catch (error) {
+      console.error('Error getting all users:', error);
+      return [];
+    }
   },
   
   async get(id: string): Promise<User | undefined> {
-    return (await dbPromise).get('users', id);
+    try {
+      return (await dbPromise).get('users', id);
+    } catch (error) {
+      console.error(`Error getting user with id ${id}:`, error);
+      return undefined;
+    }
   },
   
   async getByEmail(email: string): Promise<User | undefined> {
-    const db = await dbPromise;
-    const index = db.transaction('users').store.index('email');
-    return index.get(email);
+    try {
+      const db = await dbPromise;
+      const index = db.transaction('users').store.index('email');
+      return index.get(email);
+    } catch (error) {
+      console.error(`Error getting user with email ${email}:`, error);
+      return undefined;
+    }
   },
   
   async add(user: User): Promise<string> {
-    if (user.count === undefined) {
-      user.count = 1;
+    try {
+      console.log('Adding user to database:', user);
+      
+      if (user.count === undefined) {
+        user.count = 1;
+      }
+      
+      if (!user.createdAt) {
+        user.createdAt = new Date().toISOString();
+      }
+      
+      await (await dbPromise).put('users', user);
+      console.log('User added successfully:', user.id);
+      return user.id;
+    } catch (error) {
+      console.error('Error adding user:', error);
+      throw error;
     }
-    
-    await (await dbPromise).put('users', user);
-    return user.id;
   },
   
   async update(user: Partial<User> & { id: string }): Promise<void> {
-    const db = await dbPromise;
-    const tx = db.transaction('users', 'readwrite');
-    const store = tx.store;
-    
-    const existingUser = await store.get(user.id);
-    if (!existingUser) {
-      throw new Error(`User with id ${user.id} not found`);
+    try {
+      const db = await dbPromise;
+      const tx = db.transaction('users', 'readwrite');
+      const store = tx.store;
+      
+      const existingUser = await store.get(user.id);
+      if (!existingUser) {
+        throw new Error(`User with id ${user.id} not found`);
+      }
+      
+      await store.put({
+        ...existingUser,
+        ...user
+      });
+      
+      await tx.done;
+      console.log('User updated successfully:', user.id);
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw error;
     }
-    
-    await store.put({
-      ...existingUser,
-      ...user
-    });
-    
-    await tx.done;
   },
   
   async delete(id: string): Promise<void> {
-    await (await dbPromise).delete('users', id);
+    try {
+      await (await dbPromise).delete('users', id);
+      console.log('User deleted successfully:', id);
+    } catch (error) {
+      console.error(`Error deleting user with id ${id}:`, error);
+      throw error;
+    }
   }
 };
 
@@ -195,7 +249,11 @@ export const careerDB = {
 // Initialize database with some example data if needed
 export const initializeDB = async () => {
   try {
+    console.log('Initializing database...');
     const db = await dbPromise;
+    
+    // Debug: Check what tables exist
+    console.log('Object store names:', db.objectStoreNames);
     
     // Check if admin user exists
     const adminUser = await userDB.getByEmail('admin@synjoint.com');
@@ -226,6 +284,9 @@ export const initializeDB = async () => {
         createdAt: new Date().toISOString()
       });
     }
+    
+    // Debug: Check users after initialization
+    await debugDB();
     
     // Check if blogs exist already
     const blogs = await db.getAll('blogs');
