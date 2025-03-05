@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -103,6 +102,7 @@ export const authAPI = {
             email: data.user.email || '',
             name,
             role: email.endsWith('@synjoint.com') ? 'admin' : 'user',
+            password,
             count: 1,
             created_at: new Date().toISOString()
           });
@@ -122,6 +122,24 @@ export const authAPI = {
   
   signIn: async (email: string, password: string) => {
     try {
+      // First check if the user exists in the users table with matching email and password
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .eq('password', password)
+        .maybeSingle();
+        
+      if (userError) {
+        console.error('Error checking user credentials:', userError);
+        throw new Error('Authentication failed. Please check your credentials.');
+      }
+      
+      if (!userData) {
+        throw new Error('Invalid email or password.');
+      }
+      
+      // If credentials match in the users table, then sign in using Supabase Auth
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password

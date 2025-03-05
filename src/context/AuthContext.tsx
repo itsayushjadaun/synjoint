@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
@@ -46,7 +45,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         setIsLoading(true);
         
-        // Check for an existing session
         const { user, error } = await authAPI.getCurrentUser();
         
         if (error) {
@@ -74,7 +72,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     };
     
-    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
@@ -97,7 +94,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     initializeData();
     
-    // Cleanup subscription
     return () => {
       subscription.unsubscribe();
     };

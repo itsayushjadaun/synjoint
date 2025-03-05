@@ -40,6 +40,7 @@ export type Database = {
           email: string
           id: string
           name: string
+          password: string | null
           picture: string | null
           role: string
         }
@@ -49,6 +50,7 @@ export type Database = {
           email: string
           id: string
           name: string
+          password?: string | null
           picture?: string | null
           role?: string
         }
@@ -58,6 +60,7 @@ export type Database = {
           email?: string
           id?: string
           name?: string
+          password?: string | null
           picture?: string | null
           role?: string
         }
