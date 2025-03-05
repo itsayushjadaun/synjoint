@@ -12,6 +12,7 @@ export const supabase = createClient(
   supabaseAnonKey || ''
 );
 
+
 // Type definitions for database tables
 export type Database = {
   public: {
@@ -75,11 +76,10 @@ export type Database = {
   };
 };
 
-// Helper functions for authentication and database operations
 export const authAPI = {
   signUp: async (email: string, password: string, name: string) => {
     try {
-      // First create the auth user
+      // Remove custom password storage for security
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -93,26 +93,6 @@ export const authAPI = {
       
       if (error) throw error;
       
-      if (data.user) {
-        // Then create a record in the users table
-        const { error: insertError } = await supabase
-          .from('users')
-          .insert({
-            id: data.user.id,
-            email: data.user.email || '',
-            name,
-            role: email.endsWith('@synjoint.com') ? 'admin' : 'user',
-            password,
-            count: 1,
-            created_at: new Date().toISOString()
-          });
-          
-        if (insertError) {
-          console.error('Error creating user record:', insertError);
-          // Continue anyway, as the auth user was created successfully
-        }
-      }
-      
       return { data, error: null };
     } catch (error) {
       console.error('Sign up error:', error);
@@ -122,41 +102,45 @@ export const authAPI = {
   
   signIn: async (email: string, password: string) => {
     try {
-      // First check if the user exists in the users table with matching email and password
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .eq('password', password)
-        .maybeSingle();
-        
-      if (userError) {
-        console.error('Error checking user credentials:', userError);
-        throw new Error('Authentication failed. Please check your credentials.');
-      }
-      
-      if (!userData) {
-        throw new Error('Invalid email or password.');
-      }
-      
-      // If credentials match in the users table, then sign in using Supabase Auth
+      // Directly use Supabase authentication
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
       
-      if (error) throw error;
+      if (error) {
+        // Provide more specific error handling
+        switch (error.message) {
+          case 'Invalid login credentials':
+            return { 
+              data: null, 
+              error: new Error('Incorrect email or password. Please try again.') 
+            };
+          case 'Email not confirmed':
+            return { 
+              data: null, 
+              error: new Error('Please confirm your email before logging in.') 
+            };
+          default:
+            return { data: null, error };
+        }
+      }
       
+      // If login is successful, fetch user profile
       if (data.user) {
-        // Update the count in the users table
-        const { error: updateError } = await supabase
+        const { data: profileData, error: profileError } = await supabase
           .from('users')
-          .update({ 
-            count: supabase.rpc('increment_count', { row_id: data.user.id }) 
-          })
-          .eq('id', data.user.id);
-          
-        if (updateError) console.error('Error updating count:', updateError);
+          .select('*')
+          .eq('id', data.user.id)
+          .single();
+        
+        return { 
+          data: {
+            ...data,
+            profile: profileData
+          }, 
+          error: profileError 
+        };
       }
       
       return { data, error: null };
@@ -166,6 +150,7 @@ export const authAPI = {
     }
   },
   
+  // Rest of the methods remain the same
   signInWithGoogle: async () => {
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
