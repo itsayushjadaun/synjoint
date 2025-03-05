@@ -77,7 +77,7 @@ const Navbar = () => {
                     {user?.name.split(' ')[0]}
                   </Button>
                 </DropdownMenuTrigger>
-<DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="bg-white shadow-md border border-gray-200">
                   <DropdownMenuLabel>{user?.name}</DropdownMenuLabel>
                   <DropdownMenuLabel className="text-xs text-gray-500">{user?.email}</DropdownMenuLabel>
                   <DropdownMenuLabel className="text-xs font-semibold bg-gray-100 rounded px-2 py-1">
