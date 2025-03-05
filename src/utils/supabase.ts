@@ -129,7 +129,9 @@ export const authAPI = {
         // Update the count in the users table
         const { error: updateError } = await supabase
           .from('users')
-          .update({ count: supabase.rpc('increment_count', { row_id: data.user.id }) })
+          .update({ 
+            count: supabase.rpc('increment_count', { row_id: data.user.id }) 
+          })
           .eq('id', data.user.id);
           
         if (updateError) console.error('Error updating count:', updateError);
