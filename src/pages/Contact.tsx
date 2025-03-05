@@ -1,8 +1,56 @@
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import Navbar from "../components/Navbar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import { contactAPI } from "../utils/supabase";
 
 const Contact = () => {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    message: ""
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Basic validation
+    if (!formData.name || !formData.email || !formData.message) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    try {
+      const { error } = await contactAPI.submitContactForm(
+        formData.name,
+        formData.email,
+        formData.message
+      );
+      
+      if (error) throw error;
+      
+      toast.success("Your message has been sent! We'll get back to you soon.");
+      setFormData({ name: "", email: "", message: "" });
+    } catch (error) {
+      console.error("Error submitting contact form:", error);
+      toast.error("Failed to send your message. Please try again later.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
@@ -41,46 +89,55 @@ const Contact = () => {
             </div>
             
             <div>
-              <form className="space-y-6">
-                <div>
+              <form className="space-y-6" onSubmit={handleSubmit}>
+                <div className="space-y-2">
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                     Name
                   </label>
-                  <input
-                    type="text"
+                  <Input
                     id="name"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-synjoint-orange focus:ring-synjoint-orange"
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="w-full"
+                    required
                   />
                 </div>
                 
-                <div>
+                <div className="space-y-2">
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                     Email
                   </label>
-                  <input
-                    type="email"
+                  <Input
                     id="email"
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-synjoint-orange focus:ring-synjoint-orange"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="w-full"
+                    required
                   />
                 </div>
                 
-                <div>
+                <div className="space-y-2">
                   <label htmlFor="message" className="block text-sm font-medium text-gray-700">
                     Message
                   </label>
-                  <textarea
+                  <Textarea
                     id="message"
                     rows={4}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-synjoint-orange focus:ring-synjoint-orange"
-                  ></textarea>
+                    value={formData.message}
+                    onChange={handleChange}
+                    className="w-full"
+                    required
+                  />
                 </div>
                 
-                <button
+                <Button
                   type="submit"
                   className="w-full bg-synjoint-orange text-white px-6 py-3 rounded-md hover:bg-synjoint-orange/90 transition-colors duration-200"
+                  disabled={isSubmitting}
                 >
-                  Send Message
-                </button>
+                  {isSubmitting ? "Sending..." : "Send Message"}
+                </Button>
               </form>
             </div>
           </div>

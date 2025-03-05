@@ -1,16 +1,29 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
-import { User, BlogPost, CareerPost, userDB, blogDB, careerDB, initializeDB, debugDB } from '../utils/db';
+import { supabase, authAPI } from '../utils/supabase';
+import { User, Session } from '@supabase/supabase-js';
+import { BlogPost, CareerPost, blogDB, careerDB } from '../utils/db';
+
+interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  role: 'admin' | 'user';
+  picture?: string;
+  count: number;
+  profile?: any;
+}
 
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
-  googleLogin: (credential: string) => Promise<void>;
+  googleLogin: () => Promise<void>;
   blogs: BlogPost[];
   careers: CareerPost[];
   addBlog: (blog: Omit<BlogPost, 'id' | 'author' | 'authorId' | 'date'>) => Promise<void>;
@@ -22,7 +35,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [careers, setCareers] = useState<CareerPost[]>([]);
@@ -32,19 +45,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const initializeData = async () => {
       try {
         setIsLoading(true);
-        await initializeDB();
         
-        await debugDB();
+        // Check for an existing session
+        const { user, error } = await authAPI.getCurrentUser();
         
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-          const parsedUser = JSON.parse(storedUser);
-          const dbUser = await userDB.get(parsedUser.id);
-          if (dbUser) {
-            setUser(dbUser);
-          } else {
-            localStorage.removeItem('user');
-          }
+        if (error) {
+          console.error('Error getting current user:', error);
+        }
+        
+        if (user) {
+          setUser({
+            id: user.id,
+            email: user.email || '',
+            name: user.user_metadata.name || user.profile?.name || user.email?.split('@')[0] || 'User',
+            role: user.profile?.role || (user.email?.endsWith('@synjoint.com') ? 'admin' : 'user'),
+            picture: user.user_metadata.avatar_url || user.profile?.picture,
+            count: user.profile?.count || 1
+          });
         }
         
         await refreshBlogs();
@@ -57,7 +74,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     };
     
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          const { user: currentUser } = await authAPI.getCurrentUser();
+          if (currentUser) {
+            setUser({
+              id: currentUser.id,
+              email: currentUser.email || '',
+              name: currentUser.user_metadata.name || currentUser.profile?.name || currentUser.email?.split('@')[0] || 'User',
+              role: currentUser.profile?.role || (currentUser.email?.endsWith('@synjoint.com') ? 'admin' : 'user'),
+              picture: currentUser.user_metadata.avatar_url || currentUser.profile?.picture,
+              count: currentUser.profile?.count || 1
+            });
+          }
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+        }
+      }
+    );
+    
     initializeData();
+    
+    // Cleanup subscription
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const refreshBlogs = async () => {
@@ -83,141 +126,79 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const { data, error } = await authAPI.signIn(email, password);
       
-      const user = await userDB.getByEmail(email);
-      console.log('Login attempt for user:', email, 'Found:', user);
+      if (error) {
+        toast.error(error.message || "Invalid credentials. Please check your email and password.");
+        return;
+      }
       
-      if (user && user.password === password) {
-        if (typeof user.count === 'number') {
-          await userDB.update({
-            ...user,
-            count: user.count + 1
-          });
-        }
-        
-        setUser(user);
-        localStorage.setItem('user', JSON.stringify(user));
+      if (data?.user) {
         toast.success("Login successful!");
         navigate('/');
-      } else {
-        toast.error("Invalid credentials. Please check your email and password.");
       }
-    } catch (error) {
-      toast.error("Login failed. Please try again.");
+    } catch (error: any) {
+      toast.error(error.message || "Login failed. Please try again.");
       console.error("Login error:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const googleLogin = async (credential: string) => {
-    setIsLoading(true);
+  const googleLogin = async () => {
     try {
-      const payload = JSON.parse(atob(credential.split('.')[1]));
-      console.log("Google credential payload:", payload);
+      const { data, error } = await authAPI.signInWithGoogle();
       
-      let existingUser = await userDB.getByEmail(payload.email);
-      console.log("Google login check - Existing user:", existingUser);
-      
-      if (existingUser) {
-        const updates: Partial<User> & { id: string } = {
-          ...existingUser,
-          count: (existingUser.count || 0) + 1
-        };
-        
-        if (existingUser.picture !== payload.picture) {
-          updates.picture = payload.picture;
-        }
-        
-        await userDB.update(updates);
-        existingUser = await userDB.get(existingUser.id);
-        
-        setUser(existingUser!);
-        localStorage.setItem('user', JSON.stringify(existingUser));
-      } else {
-        const isAdmin = payload.email === 'admin@synjoint.com' || payload.email?.endsWith('@synjoint.com');
-        
-        const newUser: User = {
-          id: payload.sub || Date.now().toString(),
-          email: payload.email,
-          name: payload.name,
-          picture: payload.picture,
-          role: isAdmin ? 'admin' : 'user',
-          count: 1,
-          createdAt: new Date().toISOString()
-        };
-        
-        console.log("Creating new user from Google login:", newUser);
-        await userDB.add(newUser);
-        
-        const savedUser = await userDB.getByEmail(newUser.email);
-        console.log("Verified user was saved:", savedUser);
-        
-        setUser(newUser);
-        localStorage.setItem('user', JSON.stringify(newUser));
+      if (error) {
+        toast.error(error.message || "Google login failed. Please try again.");
+        return;
       }
       
-      toast.success("Google login successful!");
-      navigate('/');
-    } catch (error) {
-      toast.error("Google login failed. Please try again.");
+      // The redirect to the provider's login page happens automatically
+    } catch (error: any) {
+      toast.error(error.message || "Google login failed. Please try again.");
       console.error("Google login error:", error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const signup = async (name: string, email: string, password: string) => {
     setIsLoading(true);
     try {
-      const existingUser = await userDB.getByEmail(email);
-      console.log("Signup check - Existing user with email:", email, existingUser);
+      const { data, error } = await authAPI.signUp(email, password, name);
       
-      if (existingUser) {
-        toast.error("A user with this email already exists");
+      if (error) {
+        toast.error(error.message || "Signup failed. Please try again.");
         return;
       }
       
-      const isAdmin = email.endsWith('@synjoint.com');
-      
-      const newUser: User = {
-        id: Date.now().toString(),
-        email,
-        name,
-        password,
-        role: isAdmin ? 'admin' : 'user',
-        count: 1,
-        createdAt: new Date().toISOString()
-      };
-      
-      console.log("Creating new user from signup:", newUser);
-      await userDB.add(newUser);
-      
-      const savedUser = await userDB.getByEmail(email);
-      console.log("Verified user was saved:", savedUser);
-      
-      if (!savedUser) {
-        throw new Error("Failed to save user to database");
+      if (data?.user) {
+        toast.success("Account created successfully! Please check your email to confirm your account.");
+        navigate('/');
       }
-      
-      setUser(newUser);
-      localStorage.setItem('user', JSON.stringify(newUser));
-      toast.success("Account created successfully!");
-      navigate('/');
-    } catch (error) {
-      toast.error("Signup failed. Please try again.");
+    } catch (error: any) {
+      toast.error(error.message || "Signup failed. Please try again.");
       console.error("Signup error:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
-    toast.success("Logged out successfully");
-    navigate('/');
+  const logout = async () => {
+    try {
+      const { error } = await authAPI.signOut();
+      
+      if (error) {
+        toast.error(error.message || "Logout failed. Please try again.");
+        return;
+      }
+      
+      setUser(null);
+      toast.success("Logged out successfully");
+      navigate('/');
+    } catch (error: any) {
+      toast.error(error.message || "Logout failed. Please try again.");
+      console.error("Logout error:", error);
+    }
   };
 
   const addBlog = async (blog: Omit<BlogPost, 'id' | 'author' | 'authorId' | 'date'>) => {

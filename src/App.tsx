@@ -20,11 +20,12 @@ import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
 import CreateBlog from "./pages/CreateBlog";
 import CreateCareer from "./pages/CreateCareer";
+import AuthCallback from "./pages/AuthCallback";
 
 const queryClient = new QueryClient();
 
 // Get Google Client ID from environment variable
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "707788443358-u05p46nssla3l8tmn58tpo9r5sommgks.apps.googleusercontent.com";
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -48,6 +49,7 @@ const App = () => (
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/admin/create-blog" element={<CreateBlog />} />
               <Route path="/admin/create-career" element={<CreateCareer />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>
