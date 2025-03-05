@@ -24,9 +24,9 @@ const AuthCallback = () => {
             .from('users')
             .select('*')
             .eq('id', user.id)
-            .single();
+            .maybeSingle(); // Use maybeSingle instead of single to avoid errors if no record is found
             
-          if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 is "not found"
+          if (fetchError) {
             console.error('Error checking existing user:', fetchError);
           }
           
@@ -47,23 +47,25 @@ const AuthCallback = () => {
             if (insertError) {
               console.error('Error creating user record:', insertError);
               toast.error('Failed to complete sign in. Please try again.');
+            } else {
+              toast.success('Account created successfully!');
             }
           } else {
             // Update existing user's count
             const { error: updateError } = await supabase
               .from('users')
               .update({ 
-                count: existingUser.count + 1,
+                count: supabase.rpc('increment_count', { row_id: user.id }),
                 picture: user.user_metadata.avatar_url || existingUser.picture
               })
               .eq('id', user.id);
               
             if (updateError) {
               console.error('Error updating user count:', updateError);
+            } else {
+              toast.success('Successfully signed in!');
             }
           }
-          
-          toast.success('Successfully signed in!');
         }
         
         // Redirect to home page after processing

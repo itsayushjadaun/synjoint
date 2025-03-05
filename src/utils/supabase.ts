@@ -80,6 +80,7 @@ export type Database = {
 export const authAPI = {
   signUp: async (email: string, password: string, name: string) => {
     try {
+      // First create the auth user
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -94,7 +95,7 @@ export const authAPI = {
       if (error) throw error;
       
       if (data.user) {
-        // Also create a record in the users table
+        // Then create a record in the users table
         const { error: insertError } = await supabase
           .from('users')
           .insert({
@@ -106,7 +107,10 @@ export const authAPI = {
             created_at: new Date().toISOString()
           });
           
-        if (insertError) throw insertError;
+        if (insertError) {
+          console.error('Error creating user record:', insertError);
+          // Continue anyway, as the auth user was created successfully
+        }
       }
       
       return { data, error: null };
