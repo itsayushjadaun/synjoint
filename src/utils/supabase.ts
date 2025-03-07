@@ -79,17 +79,6 @@ export type Database = {
 export const authAPI = {
 signUp: async (email: string, password: string, name: string) => {
   try {
-    // Check if the user already exists
-    const { data: existingUser } = await supabase
-      .from('users')
-      .select('email')
-      .eq('email', email)
-      .maybeSingle();
-
-    if (existingUser) {
-      throw new Error("User with this email already exists");
-    }
-
     // Sign up with Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
@@ -104,26 +93,7 @@ signUp: async (email: string, password: string, name: string) => {
     });
 
     if (authError) throw authError;
-
-    if (!authData.user) {
-      throw new Error("Failed to create user");
-    }
-
-    // Insert user profile into the `users` table
-    const { error: insertError } = await supabase
-      .from('users')
-      .insert({
-        id: authData.user.id,
-        email,
-        name,
-        role: email.endsWith('@synjoint.com') ? 'admin' : 'user',
-        count: 1,
-        created_at: new Date().toISOString()
-      });
-
-    if (insertError) {
-      console.error('Error inserting user into the users table:', insertError);
-    }
+    if (!authData.user) throw new Error("Failed to create user");
 
     return { data: authData, error: null };
   } catch (error) {
@@ -132,15 +102,15 @@ signUp: async (email: string, password: string, name: string) => {
   }
 };
 
+
   
 signIn: async (email: string, password: string) => {
   try {
-    // Attempt to sign in with email and password
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       console.error('Sign-in Error:', error.message);
-      return { data: null, error: new Error(error.message || 'Invalid login credentials. Please try again.') };
+      return { data: null, error: new Error('Invalid login credentials.') };
     }
 
     console.log('User signed in successfully:', data.user);
@@ -150,6 +120,7 @@ signIn: async (email: string, password: string) => {
     return { data: null, error: new Error('Something went wrong. Please try again.') };
   }
 }
+
 
 
   
