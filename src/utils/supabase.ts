@@ -135,40 +135,21 @@ signUp: async (email: string, password: string, name: string) => {
   
 signIn: async (email: string, password: string) => {
   try {
-    // Sign in with Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
+    // Attempt to sign in with email and password
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-    if (authError) {
-      console.error('Auth API sign-in error:', authError);
-      return { data: null, error: new Error('Invalid login credentials. Please try again.') };
+    if (error) {
+      console.error('Sign-in Error:', error.message);
+      return { data: null, error: new Error(error.message || 'Invalid login credentials. Please try again.') };
     }
 
-    // Fetch user profile from `users` table
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', authData.user?.id)
-      .single();
-
-    if (userError) {
-      console.error('Error fetching user data:', userError);
-    }
-
-    return {
-      data: {
-        ...authData,
-        profile: userData || null
-      },
-      error: null
-    };
+    console.log('User signed in successfully:', data.user);
+    return { data, error: null };
   } catch (error) {
-    console.error('Sign in error:', error);
-    return { data: null, error };
+    console.error('Unexpected Sign-in Error:', error);
+    return { data: null, error: new Error('Something went wrong. Please try again.') };
   }
-};
+}
 
   
   signInWithGoogle: async () => {
