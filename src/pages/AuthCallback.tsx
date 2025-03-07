@@ -1,19 +1,32 @@
 
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../utils/supabase';
 import { toast } from 'sonner';
 
 const AuthCallback = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession();
+        // Check if there's an error in the URL (like from an expired link)
+        const hashParams = new URLSearchParams(location.hash.substring(1));
+        const error = hashParams.get('error');
+        const errorDescription = hashParams.get('error_description');
         
         if (error) {
-          throw error;
+          console.error('Auth error:', error, errorDescription);
+          toast.error(errorDescription || 'Authentication failed. Please try again.');
+          navigate('/login');
+          return;
+        }
+
+        const { data, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          throw sessionError;
         }
         
         if (data.session) {
@@ -80,7 +93,7 @@ const AuthCallback = () => {
     };
 
     handleAuthCallback();
-  }, [navigate]);
+  }, [navigate, location]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">

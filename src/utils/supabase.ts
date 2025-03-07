@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -186,7 +185,6 @@ export const authAPI = {
     }
   },
   
-  // Rest of the methods remain the same
   signInWithGoogle: async () => {
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
