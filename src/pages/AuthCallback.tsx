@@ -23,6 +23,15 @@ const AuthCallback = () => {
           return;
         }
 
+        // Check if this is an email confirmation callback from URL parameters
+        const urlParams = new URLSearchParams(location.search);
+        const type = urlParams.get('type');
+        
+        if (type === 'signup') {
+          console.log('Email confirmation callback detected');
+          toast.success('Email confirmed successfully!');
+        }
+
         const { data, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
@@ -37,7 +46,7 @@ const AuthCallback = () => {
             .from('users')
             .select('*')
             .eq('id', user.id)
-            .maybeSingle(); // Use maybeSingle instead of single to avoid errors if no record is found
+            .maybeSingle();
             
           if (fetchError) {
             console.error('Error checking existing user:', fetchError);
