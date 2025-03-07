@@ -46,7 +46,9 @@ const AuthCallback = () => {
               
             if (insertError) {
               console.error('Error creating user record:', insertError);
-              toast.error('Failed to complete sign in. Please try again.');
+              // Don't fail the sign-in process if this fails
+              console.warn("User authenticated but profile not created. Some functionality may be limited.");
+              toast.warning('Account created but profile setup incomplete.');
             } else {
               toast.success('Account created successfully!');
             }
@@ -55,7 +57,7 @@ const AuthCallback = () => {
             const { error: updateError } = await supabase
               .from('users')
               .update({ 
-                count: supabase.rpc('increment_count', { row_id: user.id }),
+                count: existingUser.count + 1,  // Manually increment instead of using RPC
                 picture: user.user_metadata.avatar_url || existingUser.picture
               })
               .eq('id', user.id);
