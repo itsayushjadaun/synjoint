@@ -80,7 +80,18 @@ export type Database = {
 export const authAPI = {
   signUp: async (email: string, password: string, name: string) => {
     try {
-      // First register with Supabase Auth
+      // First check if the user already exists in the users table
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('email')
+        .eq('email', email)
+        .maybeSingle();
+        
+      if (existingUser) {
+        throw new Error("User with this email already exists");
+      }
+      
+      // Register with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -115,7 +126,7 @@ export const authAPI = {
         console.error('Error inserting user into the users table:', insertError);
         // If inserting into users table fails, try to delete the auth user to maintain consistency
         await supabase.auth.admin.deleteUser(authData.user.id);
-        throw new Error("Failed to create user record");
+        throw new Error("Failed to create user record: " + insertError.message);
       }
       
       return { data: authData, error: null };

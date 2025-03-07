@@ -12,15 +12,15 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 
 const Login = () => {
-  const { login, signup, isLoading, googleLogin, currentUser } = useAuth();
+  const { login, signup, isLoading, googleLogin, user } = useAuth(); // Changed from currentUser to user
   const navigate = useNavigate();
 
   // Check authentication state
   useEffect(() => {
-    if (currentUser) {
+    if (user) {
       navigate("/"); // Redirect to home page if logged in
     }
-  }, [currentUser, navigate]);
+  }, [user, navigate]);
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState("");
@@ -34,17 +34,28 @@ const Login = () => {
   const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
   const [signupIsLoading, setSignupIsLoading] = useState(false);
 
+  // Email validation function
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginEmail || !loginPassword) {
       toast.error("Please fill in all fields");
       return;
     }
+
+    if (!isValidEmail(loginEmail)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
     
     setLoginIsLoading(true);
     try {
       await login(loginEmail, loginPassword);
-      // Note: navigation will be handled by the useEffect when currentUser changes
+      // Note: navigation will be handled by the useEffect when user changes
     } catch (error: any) {
       toast.error(error.message || "Invalid credentials. Please try again.");
     } finally {
@@ -58,6 +69,12 @@ const Login = () => {
       toast.error("Please fill in all fields");
       return;
     }
+
+    if (!isValidEmail(signupEmail)) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
     if (signupPassword !== signupConfirmPassword) {
       toast.error("Passwords don't match!");
       return;
@@ -70,7 +87,7 @@ const Login = () => {
     setSignupIsLoading(true);
     try {
       await signup(signupName, signupEmail, signupPassword);
-      // Note: navigation will be handled by the useEffect when currentUser changes
+      // Note: navigation will be handled by the useEffect when user changes
     } catch (error: any) {
       toast.error(error.message || "Signup failed. Please try again.");
     } finally {
