@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -79,8 +80,8 @@ export type Database = {
 export const authAPI = {
   signUp: async (email: string, password: string, name: string) => {
     try {
-      // Remove custom password storage for security
-      const { data, error } = await supabase.auth.signUp({
+      // First register with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -91,9 +92,33 @@ export const authAPI = {
         }
       });
       
-      if (error) throw error;
+      if (authError) throw authError;
       
-      return { data, error: null };
+      if (!authData.user) {
+        throw new Error("Failed to create user");
+      }
+      
+      // Then store user data in the users table with the password
+      const { error: insertError } = await supabase
+        .from('users')
+        .insert({
+          id: authData.user.id,
+          email: email,
+          name: name,
+          role: email.endsWith('@synjoint.com') ? 'admin' : 'user',
+          password: password, // Store the password
+          count: 1,
+          created_at: new Date().toISOString()
+        });
+        
+      if (insertError) {
+        console.error('Error inserting user into the users table:', insertError);
+        // If inserting into users table fails, try to delete the auth user to maintain consistency
+        await supabase.auth.admin.deleteUser(authData.user.id);
+        throw new Error("Failed to create user record");
+      }
+      
+      return { data: authData, error: null };
     } catch (error) {
       console.error('Sign up error:', error);
       return { data: null, error };
@@ -102,48 +127,42 @@ export const authAPI = {
   
   signIn: async (email: string, password: string) => {
     try {
-      // Directly use Supabase authentication
+      // First check if the user exists in the users table and validate password
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .eq('password', password)
+        .maybeSingle();
+      
+      if (userError) {
+        console.error('Error checking user credentials:', userError);
+        return { data: null, error: new Error('Authentication failed. Please try again.') };
+      }
+      
+      if (!userData) {
+        return { data: null, error: new Error('Invalid login credentials. Please try again.') };
+      }
+      
+      // If credentials match in users table, sign in with Supabase Auth as well
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
       
       if (error) {
-        // Provide more specific error handling
-        switch (error.message) {
-          case 'Invalid login credentials':
-            return { 
-              data: null, 
-              error: new Error('Incorrect email or password. Please try again.') 
-            };
-          case 'Email not confirmed':
-            return { 
-              data: null, 
-              error: new Error('Please confirm your email before logging in.') 
-            };
-          default:
-            return { data: null, error };
-        }
+        console.error('Auth API sign in error:', error);
+        return { data: null, error: new Error('Authentication error. Please try again.') };
       }
       
-      // If login is successful, fetch user profile
-      if (data.user) {
-        const { data: profileData, error: profileError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', data.user.id)
-          .single();
-        
-        return { 
-          data: {
-            ...data,
-            profile: profileData
-          }, 
-          error: profileError 
-        };
-      }
-      
-      return { data, error: null };
+      // Return user data with profile information
+      return { 
+        data: {
+          ...data,
+          profile: userData
+        }, 
+        error: null 
+      };
     } catch (error) {
       console.error('Sign in error:', error);
       return { data: null, error };

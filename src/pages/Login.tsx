@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
@@ -17,19 +18,21 @@ const Login = () => {
   // Check authentication state
   useEffect(() => {
     if (currentUser) {
-      navigate("/dashboard"); // Redirect to dashboard if logged in
+      navigate("/"); // Redirect to home page if logged in
     }
   }, [currentUser, navigate]);
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [loginIsLoading, setLoginIsLoading] = useState(false);
 
   // Signup form state
   const [signupName, setSignupName] = useState("");
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
+  const [signupIsLoading, setSignupIsLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,11 +40,15 @@ const Login = () => {
       toast.error("Please fill in all fields");
       return;
     }
+    
+    setLoginIsLoading(true);
     try {
       await login(loginEmail, loginPassword);
-      navigate("/dashboard"); // Redirect on successful login
-    } catch (error) {
-      toast.error("Invalid credentials. Please try again.");
+      // Note: navigation will be handled by the useEffect when currentUser changes
+    } catch (error: any) {
+      toast.error(error.message || "Invalid credentials. Please try again.");
+    } finally {
+      setLoginIsLoading(false);
     }
   };
 
@@ -59,20 +66,24 @@ const Login = () => {
       toast.error("Password must be at least 6 characters long");
       return;
     }
+    
+    setSignupIsLoading(true);
     try {
       await signup(signupName, signupEmail, signupPassword);
-      navigate("/dashboard"); // Redirect on successful signup
-    } catch (error) {
-      toast.error("Signup failed. Please try again.");
+      // Note: navigation will be handled by the useEffect when currentUser changes
+    } catch (error: any) {
+      toast.error(error.message || "Signup failed. Please try again.");
+    } finally {
+      setSignupIsLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
     try {
       await googleLogin();
-      navigate("/dashboard"); // Redirect on successful login
-    } catch (error) {
-      toast.error("Google login failed. Please try again.");
+      // Navigation will be handled in the callback
+    } catch (error: any) {
+      toast.error(error.message || "Google login failed. Please try again.");
     }
   };
 
@@ -127,8 +138,8 @@ const Login = () => {
                   </div>
                 </CardContent>
                 <CardFooter className="flex flex-col">
-                  <Button type="submit" className="w-full bg-synjoint-blue hover:bg-synjoint-blue/90" disabled={isLoading}>
-                    {isLoading ? "Signing in..." : "Sign In"}
+                  <Button type="submit" className="w-full bg-synjoint-blue hover:bg-synjoint-blue/90" disabled={loginIsLoading}>
+                    {loginIsLoading ? "Signing in..." : "Sign In"}
                   </Button>
 
                   <div className="relative mt-6 w-full">
@@ -176,8 +187,8 @@ const Login = () => {
                   </div>
                 </CardContent>
                 <CardFooter className="flex flex-col">
-                  <Button type="submit" className="w-full bg-synjoint-blue hover:bg-synjoint-blue/90" disabled={isLoading}>
-                    {isLoading ? "Creating Account..." : "Create Account"}
+                  <Button type="submit" className="w-full bg-synjoint-blue hover:bg-synjoint-blue/90" disabled={signupIsLoading}>
+                    {signupIsLoading ? "Creating Account..." : "Create Account"}
                   </Button>
                 </CardFooter>
               </form>
