@@ -77,110 +77,99 @@ export type Database = {
 };
 
 export const authAPI = {
-  signUp: async (email: string, password: string, name: string) => {
-    try {
-      // First check if the user already exists in the users table
-      const { data: existingUser } = await supabase
-        .from('users')
-        .select('email')
-        .eq('email', email)
-        .maybeSingle();
-        
-      if (existingUser) {
-        throw new Error("User with this email already exists");
-      }
-      
-      // Register with Supabase Auth with email confirmation enabled
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name,
-            role: email.endsWith('@synjoint.com') ? 'admin' : 'user',
-          },
-          emailRedirectTo: `${window.location.origin}/auth/callback`
-        }
-      });
-      
-      if (authError) throw authError;
-      
-      if (!authData.user) {
-        throw new Error("Failed to create user");
-      }
+signUp: async (email: string, password: string, name: string) => {
+  try {
+    // Check if the user already exists
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('email')
+      .eq('email', email)
+      .maybeSingle();
 
-      // Wait for auth.users to be updated - delay the user table insertion
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Then store user data in the users table with the password
-      const { error: insertError } = await supabase
-        .from('users')
-        .insert({
-          id: authData.user.id,
-          email: email,
-          name: name,
-          role: email.endsWith('@synjoint.com') ? 'admin' : 'user',
-          password: password, // Store the password
-          count: 1,
-          created_at: new Date().toISOString()
-        });
-        
-      if (insertError) {
-        console.error('Error inserting user into the users table:', insertError);
-        console.warn("User created in auth but not in users table. Some functionality may be limited.");
-        // Continue with sign up process even if users table insertion fails
-      }
-      
-      return { data: authData, error: null };
-    } catch (error) {
-      console.error('Sign up error:', error);
-      return { data: null, error };
+    if (existingUser) {
+      throw new Error("User with this email already exists");
     }
-  },
-  
-  signIn: async (email: string, password: string) => {
-    try {
-      // First check if the user exists in the users table and validate password
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .eq('password', password)
-        .maybeSingle();
-      
-      if (userError) {
-        console.error('Error checking user credentials:', userError);
-        return { data: null, error: new Error('Authentication failed. Please try again.') };
-      }
-      
-      if (!userData) {
-        return { data: null, error: new Error('Invalid login credentials. Please try again.') };
-      }
-      
-      // If credentials match in users table, sign in with Supabase Auth as well
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (error) {
-        console.error('Auth API sign in error:', error);
-        return { data: null, error: new Error('Authentication error. Please try again.') };
-      }
-      
-      // Return user data with profile information
-      return { 
+
+    // Sign up with Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
         data: {
-          ...data,
-          profile: userData
-        }, 
-        error: null 
-      };
-    } catch (error) {
-      console.error('Sign in error:', error);
-      return { data: null, error };
+          name,
+          role: email.endsWith('@synjoint.com') ? 'admin' : 'user',
+        },
+        emailRedirectTo: `${window.location.origin}/auth/callback`
+      }
+    });
+
+    if (authError) throw authError;
+
+    if (!authData.user) {
+      throw new Error("Failed to create user");
     }
-  },
+
+    // Insert user profile into the `users` table
+    const { error: insertError } = await supabase
+      .from('users')
+      .insert({
+        id: authData.user.id,
+        email,
+        name,
+        role: email.endsWith('@synjoint.com') ? 'admin' : 'user',
+        count: 1,
+        created_at: new Date().toISOString()
+      });
+
+    if (insertError) {
+      console.error('Error inserting user into the users table:', insertError);
+    }
+
+    return { data: authData, error: null };
+  } catch (error) {
+    console.error('Sign up error:', error);
+    return { data: null, error };
+  }
+};
+
+  
+signIn: async (email: string, password: string) => {
+  try {
+    // Sign in with Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (authError) {
+      console.error('Auth API sign-in error:', authError);
+      return { data: null, error: new Error('Invalid login credentials. Please try again.') };
+    }
+
+    // Fetch user profile from `users` table
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', authData.user?.id)
+      .single();
+
+    if (userError) {
+      console.error('Error fetching user data:', userError);
+    }
+
+    return {
+      data: {
+        ...authData,
+        profile: userData || null
+      },
+      error: null
+    };
+  } catch (error) {
+    console.error('Sign in error:', error);
+    return { data: null, error };
+  }
+};
+
   
   signInWithGoogle: async () => {
     try {
