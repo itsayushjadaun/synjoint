@@ -121,6 +121,7 @@ export const authAPI = {
 
       console.log('User signed in successfully:', data.user);
       
+      // IMPORTANT: Always check and ensure user exists in users table
       // Check if user exists in users table
       const { data: userData, error: userError } = await supabase
         .from('users')
@@ -135,20 +136,37 @@ export const authAPI = {
       // If no user record in users table, create one
       if (!userData) {
         console.log('User authenticated but no profile found. Creating profile...');
+        const newUserData = {
+          id: data.user.id,
+          email: data.user.email || '',
+          name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User',
+          role: data.user.email?.endsWith('@synjoint.com') ? 'admin' : 'user',
+          count: 1,
+          created_at: new Date().toISOString()
+        };
+        
         const { error: createError } = await supabase
           .from('users')
-          .insert({
-            id: data.user.id,
-            email: data.user.email || '',
-            name: data.user.user_metadata.name || data.user.email?.split('@')[0] || 'User',
-            role: data.user.email?.endsWith('@synjoint.com') ? 'admin' : 'user',
-            count: 1,
-            created_at: new Date().toISOString()
-          });
+          .insert(newUserData);
         
         if (createError) {
           console.error('Error creating user profile on login:', createError);
-          console.warn('User authenticated but profile not created. Some functionality may be limited.');
+          // Fallback to simpler record if the full one fails
+          const { error: fallbackError } = await supabase
+            .from('users')
+            .insert({
+              id: data.user.id,
+              email: data.user.email || '',
+              name: data.user.email?.split('@')[0] || 'User',
+              role: 'user'
+            });
+            
+          if (fallbackError) {
+            console.error('Even simplified user creation failed:', fallbackError);
+            console.warn('User authenticated but profile not created. Some functionality may be limited.');
+          } else {
+            console.log('Simplified user profile created on login');
+          }
         } else {
           console.log('User profile created successfully on login');
         }

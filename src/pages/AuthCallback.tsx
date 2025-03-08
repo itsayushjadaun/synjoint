@@ -47,77 +47,8 @@ const AuthCallback = () => {
           const user = data.session.user;
           console.log("Session user found:", user);
           
-          // Check if user already exists in our users table
-          const { data: existingUser, error: fetchError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', user.id)
-            .maybeSingle();
-            
-          if (fetchError) {
-            console.error('Error checking existing user:', fetchError);
-          }
-          
-          if (!existingUser) {
-            console.log("Creating new user record in users table");
-            // Create new user record
-            const { error: insertError } = await supabase
-              .from('users')
-              .insert({
-                id: user.id,
-                email: user.email || '',
-                name: user.user_metadata.name || user.email?.split('@')[0] || 'User',
-                role: user.email?.endsWith('@synjoint.com') ? 'admin' : 'user',
-                picture: user.user_metadata.avatar_url,
-                count: 1,
-                created_at: new Date().toISOString()
-              });
-              
-            if (insertError) {
-              console.error('Error creating user record:', insertError);
-              // Add detailed error logging to help identify issues
-              console.error('Insert error details:', JSON.stringify(insertError));
-              
-              // Try again with less fields to see if that works
-              console.log("Trying simplified user creation");
-              const { error: simpleInsertError } = await supabase
-                .from('users')
-                .insert({
-                  id: user.id,
-                  email: user.email || '',
-                  name: user.user_metadata.name || user.email?.split('@')[0] || 'User',
-                  role: 'user'
-                });
-                
-              if (simpleInsertError) {
-                console.error('Simplified insert also failed:', simpleInsertError);
-                toast.warning('Account created but profile setup incomplete. Some features may be limited.');
-              } else {
-                console.log("Simplified user record created successfully");
-                toast.success('Account created successfully!');
-              }
-            } else {
-              console.log("User record created successfully");
-              toast.success('Account created successfully!');
-            }
-          } else {
-            console.log("User already exists in users table, updating count");
-            // Update existing user's count
-            const { error: updateError } = await supabase
-              .from('users')
-              .update({ 
-                count: (existingUser.count || 0) + 1,  // Use existing count or default to 0
-                picture: user.user_metadata.avatar_url || existingUser.picture
-              })
-              .eq('id', user.id);
-              
-            if (updateError) {
-              console.error('Error updating user count:', updateError);
-            } else {
-              console.log("User count updated successfully");
-              toast.success('Successfully signed in!');
-            }
-          }
+          // Always ensure user record exists in users table, regardless of callback type
+          await ensureUserRecord(user);
           
           // Ensure we give enough time for the database operations to complete
           setTimeout(() => {
@@ -135,6 +66,94 @@ const AuthCallback = () => {
         navigate('/login');
       } finally {
         setIsProcessing(false);
+      }
+    };
+
+    // Helper function to ensure user record exists
+    const ensureUserRecord = async (user) => {
+      try {
+        if (!user || !user.id) {
+          console.error('Invalid user data for database entry');
+          return;
+        }
+
+        console.log("Ensuring user record exists for:", user.id);
+        
+        // Check if user already exists in users table
+        const { data: existingUser, error: fetchError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle();
+          
+        if (fetchError) {
+          console.error('Error checking existing user:', fetchError);
+        }
+        
+        if (!existingUser) {
+          console.log("Creating new user record in users table");
+          // Create new user record
+          const userData = {
+            id: user.id,
+            email: user.email || '',
+            name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+            role: user.email?.endsWith('@synjoint.com') ? 'admin' : 'user',
+            picture: user.user_metadata?.avatar_url,
+            count: 1,
+            created_at: new Date().toISOString()
+          };
+
+          const { error: insertError } = await supabase
+            .from('users')
+            .insert(userData);
+            
+          if (insertError) {
+            console.error('Error creating user record:', insertError);
+            // Add detailed error logging to help identify issues
+            console.error('Insert error details:', JSON.stringify(insertError));
+            
+            // Try again with less fields to see if that works
+            console.log("Trying simplified user creation");
+            const { error: simpleInsertError } = await supabase
+              .from('users')
+              .insert({
+                id: user.id,
+                email: user.email || '',
+                name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+                role: 'user'
+              });
+              
+            if (simpleInsertError) {
+              console.error('Simplified insert also failed:', simpleInsertError);
+              toast.warning('Account created but profile setup incomplete. Some features may be limited.');
+            } else {
+              console.log("Simplified user record created successfully");
+              toast.success('Account created successfully!');
+            }
+          } else {
+            console.log("User record created successfully");
+            toast.success('Account created successfully!');
+          }
+        } else {
+          console.log("User already exists in users table, updating count");
+          // Update existing user's count
+          const { error: updateError } = await supabase
+            .from('users')
+            .update({ 
+              count: (existingUser.count || 0) + 1,  // Use existing count or default to 0
+              picture: user.user_metadata?.avatar_url || existingUser.picture
+            })
+            .eq('id', user.id);
+            
+          if (updateError) {
+            console.error('Error updating user count:', updateError);
+          } else {
+            console.log("User count updated successfully");
+            toast.success('Successfully signed in!');
+          }
+        }
+      } catch (error) {
+        console.error('Error ensuring user record exists:', error);
       }
     };
 
