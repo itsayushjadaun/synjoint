@@ -75,9 +75,27 @@ const AuthCallback = () => {
               
             if (insertError) {
               console.error('Error creating user record:', insertError);
-              // Don't fail the sign-in process if this fails
-              console.warn("User authenticated but profile not created. Some functionality may be limited.");
-              toast.warning('Account created but profile setup incomplete.');
+              // Add detailed error logging to help identify issues
+              console.error('Insert error details:', JSON.stringify(insertError));
+              
+              // Try again with less fields to see if that works
+              console.log("Trying simplified user creation");
+              const { error: simpleInsertError } = await supabase
+                .from('users')
+                .insert({
+                  id: user.id,
+                  email: user.email || '',
+                  name: user.user_metadata.name || user.email?.split('@')[0] || 'User',
+                  role: 'user'
+                });
+                
+              if (simpleInsertError) {
+                console.error('Simplified insert also failed:', simpleInsertError);
+                toast.warning('Account created but profile setup incomplete. Some features may be limited.');
+              } else {
+                console.log("Simplified user record created successfully");
+                toast.success('Account created successfully!');
+              }
             } else {
               console.log("User record created successfully");
               toast.success('Account created successfully!');
@@ -105,7 +123,7 @@ const AuthCallback = () => {
           setTimeout(() => {
             console.log("Auth callback completed, redirecting to home page");
             navigate('/');
-          }, 1000);
+          }, 1500);
         } else {
           console.log("No session found in callback");
           toast.error('No active session found. Please try logging in again.');

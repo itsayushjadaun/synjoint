@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -13,8 +12,6 @@ export const supabase = createClient(
   supabaseAnonKey || ''
 );
 
-
-// Type definitions for database tables
 export type Database = {
   public: {
     Tables: {
@@ -80,6 +77,7 @@ export type Database = {
 export const authAPI = {
   signUp: async (email: string, password: string, name: string) => {
     try {
+      console.log(`Signing up user: ${email} with name: ${name}`);
       // Sign up with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
@@ -93,9 +91,17 @@ export const authAPI = {
         }
       });
 
-      if (authError) throw authError;
-      if (!authData.user) throw new Error("Failed to create user");
+      if (authError) {
+        console.error('Sign up error:', authError);
+        throw authError;
+      }
+      
+      if (!authData.user) {
+        console.error('Failed to create user - no user data returned');
+        throw new Error("Failed to create user");
+      }
 
+      console.log('Sign up successful, user data:', authData.user);
       return { data: authData, error: null };
     } catch (error) {
       console.error('Sign up error:', error);
@@ -105,6 +111,7 @@ export const authAPI = {
 
   signIn: async (email: string, password: string) => {
     try {
+      console.log(`Attempting to sign in user: ${email}`);
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
       if (error) {
@@ -113,6 +120,51 @@ export const authAPI = {
       }
 
       console.log('User signed in successfully:', data.user);
+      
+      // Check if user exists in users table
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', data.user.id)
+        .maybeSingle();
+      
+      if (userError) {
+        console.error('Error fetching user profile:', userError);
+      }
+      
+      // If no user record in users table, create one
+      if (!userData) {
+        console.log('User authenticated but no profile found. Creating profile...');
+        const { error: createError } = await supabase
+          .from('users')
+          .insert({
+            id: data.user.id,
+            email: data.user.email || '',
+            name: data.user.user_metadata.name || data.user.email?.split('@')[0] || 'User',
+            role: data.user.email?.endsWith('@synjoint.com') ? 'admin' : 'user',
+            count: 1,
+            created_at: new Date().toISOString()
+          });
+        
+        if (createError) {
+          console.error('Error creating user profile on login:', createError);
+          console.warn('User authenticated but profile not created. Some functionality may be limited.');
+        } else {
+          console.log('User profile created successfully on login');
+        }
+      } else {
+        console.log('User profile found:', userData);
+        // Update user count
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ count: (userData.count || 0) + 1 })
+          .eq('id', data.user.id);
+        
+        if (updateError) {
+          console.error('Error updating user count:', updateError);
+        }
+      }
+      
       return { data, error: null };
     } catch (error) {
       console.error('Unexpected Sign-in Error:', error);

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
@@ -9,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Login = () => {
   const { login, signup, isLoading, googleLogin, user } = useAuth();
@@ -17,6 +19,7 @@ const Login = () => {
   // Check authentication state
   useEffect(() => {
     if (user) {
+      console.log("User is already logged in, redirecting to home page", user);
       navigate("/"); // Redirect to home page if logged in
     }
   }, [user, navigate]);
@@ -25,6 +28,7 @@ const Login = () => {
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginIsLoading, setLoginIsLoading] = useState(false);
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   // Signup form state
   const [signupName, setSignupName] = useState("");
@@ -32,6 +36,7 @@ const Login = () => {
   const [signupPassword, setSignupPassword] = useState("");
   const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
   const [signupIsLoading, setSignupIsLoading] = useState(false);
+  const [signupError, setSignupError] = useState<string | null>(null);
   const [signupComplete, setSignupComplete] = useState(false);
 
   // Email validation function
@@ -42,22 +47,30 @@ const Login = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoginError(null);
+    
     if (!loginEmail || !loginPassword) {
+      setLoginError("Please fill in all fields");
       toast.error("Please fill in all fields");
       return;
     }
 
     if (!isValidEmail(loginEmail)) {
+      setLoginError("Please enter a valid email address");
       toast.error("Please enter a valid email address");
       return;
     }
     
     setLoginIsLoading(true);
     try {
+      console.log(`Attempting to login with email: ${loginEmail}`);
       await login(loginEmail, loginPassword);
       // Note: navigation will be handled by the useEffect when user changes
     } catch (error: any) {
-      toast.error(error.message || "Invalid credentials. Please try again.");
+      console.error("Login error:", error);
+      const errorMessage = error.message || "Invalid credentials. Please try again.";
+      setLoginError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoginIsLoading(false);
     }
@@ -65,34 +78,49 @@ const Login = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSignupError(null);
+    
     if (!signupName || !signupEmail || !signupPassword || !signupConfirmPassword) {
+      setSignupError("Please fill in all fields");
       toast.error("Please fill in all fields");
       return;
     }
 
     if (!isValidEmail(signupEmail)) {
+      setSignupError("Please enter a valid email address");
       toast.error("Please enter a valid email address");
       return;
     }
 
     if (signupPassword !== signupConfirmPassword) {
+      setSignupError("Passwords don't match!");
       toast.error("Passwords don't match!");
       return;
     }
     if (signupPassword.length < 6) {
+      setSignupError("Password must be at least 6 characters long");
       toast.error("Password must be at least 6 characters long");
       return;
     }
     
     setSignupIsLoading(true);
     try {
+      console.log(`Attempting signup with email: ${signupEmail}, name: ${signupName}`);
       const response = await signup(signupName, signupEmail, signupPassword);
       if (response && response.data && !response.error) {
         setSignupComplete(true);
         toast.success("Please check your email to confirm your account.");
+      } else if (response && response.error) {
+        // Display the specific error message
+        const errorMessage = response.error.message || "Signup failed. Please try again.";
+        setSignupError(errorMessage);
+        toast.error(errorMessage);
       }
     } catch (error: any) {
-      toast.error(error.message || "Signup failed. Please try again.");
+      console.error("Signup error:", error);
+      const errorMessage = error.message || "Signup failed. Please try again.";
+      setSignupError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setSignupIsLoading(false);
     }
@@ -103,7 +131,8 @@ const Login = () => {
       await googleLogin();
       // Navigation will be handled in the callback
     } catch (error: any) {
-      toast.error(error.message || "Google login failed. Please try again.");
+      const errorMessage = error.message || "Google login failed. Please try again.";
+      toast.error(errorMessage);
     }
   };
 
@@ -164,6 +193,12 @@ const Login = () => {
               </CardHeader>
               <form onSubmit={handleLogin}>
                 <CardContent className="space-y-4">
+                  {loginError && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{loginError}</AlertDescription>
+                    </Alert>
+                  )}
+                  
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
                     <Input
@@ -223,6 +258,12 @@ const Login = () => {
               </CardHeader>
               <form onSubmit={handleSignup}>
                 <CardContent className="space-y-4">
+                  {signupError && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{signupError}</AlertDescription>
+                    </Alert>
+                  )}
+                  
                   <div className="space-y-2">
                     <Label htmlFor="name">Full Name</Label>
                     <Input id="name" type="text" value={signupName} onChange={(e) => setSignupName(e.target.value)} required />
