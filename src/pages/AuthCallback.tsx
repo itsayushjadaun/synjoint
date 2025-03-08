@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../utils/supabase';
 import { toast } from 'sonner';
@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 const AuthCallback = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isProcessing, setIsProcessing] = useState(true);
 
   useEffect(() => {
     const handleAuthCallback = async () => {
@@ -29,11 +30,12 @@ const AuthCallback = () => {
         const urlParams = new URLSearchParams(location.search);
         const type = urlParams.get('type');
         
-        if (type === 'signup') {
-          console.log('Email confirmation callback detected');
+        if (type === 'signup' || type === 'recovery' || type === 'invite') {
+          console.log(`Email ${type} callback detected`);
           toast.success('Email confirmed successfully!');
         }
 
+        // Get current session after confirmation
         const { data, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
@@ -98,20 +100,23 @@ const AuthCallback = () => {
               toast.success('Successfully signed in!');
             }
           }
+          
+          // Ensure we give enough time for the database operations to complete
+          setTimeout(() => {
+            console.log("Auth callback completed, redirecting to home page");
+            navigate('/');
+          }, 1000);
         } else {
           console.log("No session found in callback");
           toast.error('No active session found. Please try logging in again.');
           navigate('/login');
-          return;
         }
-        
-        // Redirect to home page after processing
-        console.log("Auth callback completed, redirecting to home page");
-        navigate('/');
       } catch (error) {
         console.error('Auth callback error:', error);
         toast.error('Authentication failed. Please try again.');
         navigate('/login');
+      } finally {
+        setIsProcessing(false);
       }
     };
 
@@ -121,8 +126,12 @@ const AuthCallback = () => {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
       <div className="text-center">
-        <h2 className="text-2xl font-semibold mb-4">Completing sign in...</h2>
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-synjoint-blue mx-auto"></div>
+        <h2 className="text-2xl font-semibold mb-4">
+          {isProcessing ? "Completing sign in..." : "Processing complete"}
+        </h2>
+        {isProcessing && (
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-synjoint-blue mx-auto"></div>
+        )}
       </div>
     </div>
   );

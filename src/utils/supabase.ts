@@ -89,7 +89,7 @@ export const authAPI = {
             name,
             role: email.endsWith('@synjoint.com') ? 'admin' : 'user',
           },
-          emailRedirectTo: `${window.location.origin}/auth/callback`
+          emailRedirectTo: `${window.location.origin}/auth/callback?type=signup`
         }
       });
 

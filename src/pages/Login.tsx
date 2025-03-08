@@ -32,6 +32,7 @@ const Login = () => {
   const [signupPassword, setSignupPassword] = useState("");
   const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
   const [signupIsLoading, setSignupIsLoading] = useState(false);
+  const [signupComplete, setSignupComplete] = useState(false);
 
   // Email validation function
   const isValidEmail = (email: string) => {
@@ -87,9 +88,9 @@ const Login = () => {
     try {
       const response = await signup(signupName, signupEmail, signupPassword);
       if (response && response.data && !response.error) {
+        setSignupComplete(true);
         toast.success("Please check your email to confirm your account.");
       }
-      // Note: navigation will be handled by the useEffect when user changes
     } catch (error: any) {
       toast.error(error.message || "Signup failed. Please try again.");
     } finally {
@@ -105,6 +106,40 @@ const Login = () => {
       toast.error(error.message || "Google login failed. Please try again.");
     }
   };
+
+  if (signupComplete) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="pt-32 px-4 sm:px-6 lg:px-8 max-w-md mx-auto">
+          <Card>
+            <CardHeader>
+              <CardTitle>Check Your Email</CardTitle>
+              <CardDescription>
+                We've sent a confirmation link to your email. Please check your inbox and click the link to complete your registration.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-center text-muted-foreground">
+                Once confirmed, you can return to the login page to sign in with your credentials.
+              </p>
+            </CardContent>
+            <CardFooter>
+              <Button 
+                variant="outline" 
+                className="w-full" 
+                onClick={() => {
+                  setSignupComplete(false);
+                }}
+              >
+                Return to Login
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
