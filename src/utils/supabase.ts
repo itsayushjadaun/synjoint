@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -77,53 +78,47 @@ export type Database = {
 };
 
 export const authAPI = {
-signUp: async (email: string, password: string, name: string) => {
-  try {
-    // Sign up with Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          name,
-          role: email.endsWith('@synjoint.com') ? 'admin' : 'user',
-        },
-        emailRedirectTo: `${window.location.origin}/auth/callback`
-      }
-    });
+  signUp: async (email: string, password: string, name: string) => {
+    try {
+      // Sign up with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            role: email.endsWith('@synjoint.com') ? 'admin' : 'user',
+          },
+          emailRedirectTo: `${window.location.origin}/auth/callback`
+        }
+      });
 
-    if (authError) throw authError;
-    if (!authData.user) throw new Error("Failed to create user");
+      if (authError) throw authError;
+      if (!authData.user) throw new Error("Failed to create user");
 
-    return { data: authData, error: null };
-  } catch (error) {
-    console.error('Sign up error:', error);
-    return { data: null, error };
-  }
-};
-
-
-  
-signIn: async (email: string, password: string) => {
-  try {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-    if (error) {
-      console.error('Sign-in Error:', error.message);
-      return { data: null, error: new Error('Invalid login credentials.') };
+      return { data: authData, error: null };
+    } catch (error) {
+      console.error('Sign up error:', error);
+      return { data: null, error };
     }
+  },
 
-    console.log('User signed in successfully:', data.user);
-    return { data, error: null };
-  } catch (error) {
-    console.error('Unexpected Sign-in Error:', error);
-    return { data: null, error: new Error('Something went wrong. Please try again.') };
-  }
-}
+  signIn: async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
+      if (error) {
+        console.error('Sign-in Error:', error.message);
+        return { data: null, error: new Error('Invalid login credentials.') };
+      }
 
-
-
+      console.log('User signed in successfully:', data.user);
+      return { data, error: null };
+    } catch (error) {
+      console.error('Unexpected Sign-in Error:', error);
+      return { data: null, error: new Error('Something went wrong. Please try again.') };
+    }
+  },
   
   signInWithGoogle: async () => {
     try {
