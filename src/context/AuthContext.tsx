@@ -20,7 +20,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string) => Promise<void>;
+  signup: (name: string, email: string, password: string) => Promise<{data: any, error: any}>;
   logout: () => void;
   googleLogin: () => Promise<void>;
   blogs: BlogPost[];
@@ -74,6 +74,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log("Auth state changed:", event, session);
         if (event === 'SIGNED_IN' && session?.user) {
           const { user: currentUser } = await authAPI.getCurrentUser();
           if (currentUser) {
@@ -122,20 +123,52 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
+      console.log("Attempting login for:", email);
       const { data, error } = await authAPI.signIn(email, password);
       
       if (error) {
+        console.error("Login error:", error);
         toast.error(error.message || "Invalid credentials. Please check your email and password.");
+        setIsLoading(false);
         return;
       }
       
       if (data?.user) {
+        console.log("Login successful, user:", data.user);
         toast.success("Login successful!");
-        navigate('/');
+        // Note: User will be set by the auth state change listener
       }
     } catch (error: any) {
-      toast.error(error.message || "Login failed. Please try again.");
       console.error("Login error:", error);
+      toast.error(error.message || "Login failed. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signup = async (name: string, email: string, password: string) => {
+    setIsLoading(true);
+    try {
+      console.log("Attempting signup for:", email);
+      const { data, error } = await authAPI.signUp(email, password, name);
+      
+      if (error) {
+        console.error("Signup error:", error);
+        toast.error(error.message || "Signup failed. Please try again.");
+        setIsLoading(false);
+        return { data: null, error };
+      }
+      
+      if (data?.user) {
+        console.log("Signup successful, user:", data.user);
+        toast.success("Account created successfully! Please check your email to confirm your account.");
+      }
+      
+      return { data, error: null };
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      toast.error(error.message || "Signup failed. Please try again.");
+      return { data: null, error };
     } finally {
       setIsLoading(false);
     }
@@ -143,47 +176,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const googleLogin = async () => {
     try {
+      console.log("Attempting Google login");
       const { data, error } = await authAPI.signInWithGoogle();
       
       if (error) {
+        console.error("Google login error:", error);
         toast.error(error.message || "Google login failed. Please try again.");
         return;
       }
       
       // The redirect to the provider's login page happens automatically
     } catch (error: any) {
-      toast.error(error.message || "Google login failed. Please try again.");
       console.error("Google login error:", error);
-    }
-  };
-
-  const signup = async (name: string, email: string, password: string) => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await authAPI.signUp(email, password, name);
-      
-      if (error) {
-        toast.error(error.message || "Signup failed. Please try again.");
-        return;
-      }
-      
-      if (data?.user) {
-        toast.success("Account created successfully! Please check your email to confirm your account.");
-        navigate('/');
-      }
-    } catch (error: any) {
-      toast.error(error.message || "Signup failed. Please try again.");
-      console.error("Signup error:", error);
-    } finally {
-      setIsLoading(false);
+      toast.error(error.message || "Google login failed. Please try again.");
     }
   };
 
   const logout = async () => {
     try {
+      console.log("Attempting logout");
       const { error } = await authAPI.signOut();
       
       if (error) {
+        console.error("Logout error:", error);
         toast.error(error.message || "Logout failed. Please try again.");
         return;
       }
@@ -192,8 +207,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       toast.success("Logged out successfully");
       navigate('/');
     } catch (error: any) {
-      toast.error(error.message || "Logout failed. Please try again.");
       console.error("Logout error:", error);
+      toast.error(error.message || "Logout failed. Please try again.");
     }
   };
 

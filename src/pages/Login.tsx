@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
@@ -87,7 +86,7 @@ const Login = () => {
     setSignupIsLoading(true);
     try {
       const response = await signup(signupName, signupEmail, signupPassword);
-      if (response && !response.error) {
+      if (response && response.data && !response.error) {
         toast.success("Please check your email to confirm your account.");
       }
       // Note: navigation will be handled by the useEffect when user changes

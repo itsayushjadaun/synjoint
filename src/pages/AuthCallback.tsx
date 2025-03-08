@@ -11,6 +11,8 @@ const AuthCallback = () => {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
+        console.log("Auth callback handling started");
+        
         // Check if there's an error in the URL (like from an expired link)
         const hashParams = new URLSearchParams(location.hash.substring(1));
         const error = hashParams.get('error');
@@ -35,6 +37,7 @@ const AuthCallback = () => {
         const { data, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
+          console.error('Session error:', sessionError);
           throw sessionError;
         }
         
@@ -64,6 +67,7 @@ const AuthCallback = () => {
                 name: user.user_metadata.name || user.email?.split('@')[0] || 'User',
                 role: user.email?.endsWith('@synjoint.com') ? 'admin' : 'user',
                 picture: user.user_metadata.avatar_url,
+                count: 1,
                 created_at: new Date().toISOString()
               });
               
@@ -73,6 +77,7 @@ const AuthCallback = () => {
               console.warn("User authenticated but profile not created. Some functionality may be limited.");
               toast.warning('Account created but profile setup incomplete.');
             } else {
+              console.log("User record created successfully");
               toast.success('Account created successfully!');
             }
           } else {
@@ -89,12 +94,19 @@ const AuthCallback = () => {
             if (updateError) {
               console.error('Error updating user count:', updateError);
             } else {
+              console.log("User count updated successfully");
               toast.success('Successfully signed in!');
             }
           }
+        } else {
+          console.log("No session found in callback");
+          toast.error('No active session found. Please try logging in again.');
+          navigate('/login');
+          return;
         }
         
         // Redirect to home page after processing
+        console.log("Auth callback completed, redirecting to home page");
         navigate('/');
       } catch (error) {
         console.error('Auth callback error:', error);
