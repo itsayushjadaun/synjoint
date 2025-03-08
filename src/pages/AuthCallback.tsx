@@ -40,6 +40,7 @@ const AuthCallback = () => {
         
         if (data.session) {
           const user = data.session.user;
+          console.log("Session user found:", user);
           
           // Check if user already exists in our users table
           const { data: existingUser, error: fetchError } = await supabase
@@ -53,6 +54,7 @@ const AuthCallback = () => {
           }
           
           if (!existingUser) {
+            console.log("Creating new user record in users table");
             // Create new user record
             const { error: insertError } = await supabase
               .from('users')
@@ -62,7 +64,6 @@ const AuthCallback = () => {
                 name: user.user_metadata.name || user.email?.split('@')[0] || 'User',
                 role: user.email?.endsWith('@synjoint.com') ? 'admin' : 'user',
                 picture: user.user_metadata.avatar_url,
-                count: 1,
                 created_at: new Date().toISOString()
               });
               
@@ -75,11 +76,12 @@ const AuthCallback = () => {
               toast.success('Account created successfully!');
             }
           } else {
+            console.log("User already exists in users table, updating count");
             // Update existing user's count
             const { error: updateError } = await supabase
               .from('users')
               .update({ 
-                count: existingUser.count + 1,  // Manually increment instead of using RPC
+                count: (existingUser.count || 0) + 1,  // Use existing count or default to 0
                 picture: user.user_metadata.avatar_url || existingUser.picture
               })
               .eq('id', user.id);

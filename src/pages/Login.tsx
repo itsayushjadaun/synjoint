@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 
 const Login = () => {
-  const { login, signup, isLoading, googleLogin, user } = useAuth(); // Changed from currentUser to user
+  const { login, signup, isLoading, googleLogin, user } = useAuth();
   const navigate = useNavigate();
 
   // Check authentication state
@@ -86,7 +86,10 @@ const Login = () => {
     
     setSignupIsLoading(true);
     try {
-      await signup(signupName, signupEmail, signupPassword);
+      const response = await signup(signupName, signupEmail, signupPassword);
+      if (response && !response.error) {
+        toast.success("Please check your email to confirm your account.");
+      }
       // Note: navigation will be handled by the useEffect when user changes
     } catch (error: any) {
       toast.error(error.message || "Signup failed. Please try again.");
