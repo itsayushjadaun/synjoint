@@ -65,13 +65,23 @@ const Login = () => {
     try {
       console.log(`Attempting to login with email: ${loginEmail}`);
       await login(loginEmail, loginPassword);
-      // Note: navigation will be handled by the useEffect when user changes
+      
+      // Note: If we're still here after 3 seconds, something might be wrong
+      const loginTimeout = setTimeout(() => {
+        if (!user) {
+          setLoginError("Login is taking longer than expected. Please check your credentials and try again.");
+          setLoginIsLoading(false);
+          toast.error("Login timed out. Please try again.");
+        }
+      }, 3000);
+      
+      // Cleanup timeout if component unmounts
+      return () => clearTimeout(loginTimeout);
     } catch (error: any) {
       console.error("Login error:", error);
       const errorMessage = error.message || "Invalid credentials. Please try again.";
       setLoginError(errorMessage);
       toast.error(errorMessage);
-    } finally {
       setLoginIsLoading(false);
     }
   };
@@ -208,6 +218,7 @@ const Login = () => {
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
                       required
+                      disabled={loginIsLoading}
                     />
                   </div>
                   <div className="space-y-2">
@@ -223,12 +234,18 @@ const Login = () => {
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       required
+                      disabled={loginIsLoading}
                     />
                   </div>
                 </CardContent>
                 <CardFooter className="flex flex-col">
                   <Button type="submit" className="w-full bg-synjoint-blue hover:bg-synjoint-blue/90" disabled={loginIsLoading}>
-                    {loginIsLoading ? "Signing in..." : "Sign In"}
+                    {loginIsLoading ? (
+                      <div className="flex items-center">
+                        <div className="animate-spin mr-2 h-4 w-4 border-b-2 rounded-full border-white"></div>
+                        <span>Signing in...</span>
+                      </div>
+                    ) : "Sign In"}
                   </Button>
 
                   <div className="relative mt-6 w-full">
@@ -241,7 +258,7 @@ const Login = () => {
                   </div>
 
                   <div className="mt-6 w-full">
-                    <Button type="button" variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={isLoading}>
+                    <Button type="button" variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={isLoading || loginIsLoading}>
                       Sign in with Google
                     </Button>
                   </div>
@@ -290,6 +307,13 @@ const Login = () => {
             </Card>
           </TabsContent>
         </Tabs>
+
+        <div className="mt-6 text-center text-sm text-gray-500">
+          <p>
+            Important: After signing up, you must confirm your email before you can log in.
+            Check your inbox (and spam folder) for the confirmation email.
+          </p>
+        </div>
       </div>
     </div>
   );
