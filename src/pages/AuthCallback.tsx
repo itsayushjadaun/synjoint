@@ -14,6 +14,7 @@ const AuthCallback = () => {
     const handleAuthCallback = async () => {
       try {
         console.log("Auth callback handling started");
+        console.log("Current URL:", window.location.href);
         setStatus('Verifying your authentication...');
         
         // Check if there's an error in the URL (like from an expired link)
@@ -28,25 +29,26 @@ const AuthCallback = () => {
           return;
         }
 
-        // Check if this is an email confirmation callback from URL parameters
+        // Parse URL to check for provider info
         const urlParams = new URLSearchParams(location.search);
         const type = urlParams.get('type');
         const provider = urlParams.get('provider');
         
-        if (type === 'signup') {
+        if (provider === 'google') {
+          console.log('Google authentication callback detected');
+          setStatus('Google authentication confirmed! Setting up your account...');
+        } else if (type === 'signup') {
           console.log(`Email signup confirmation detected`);
           setStatus('Email confirmed! Setting up your account...');
           toast.success('Email confirmed successfully!');
         } else if (type === 'recovery' || type === 'invite') {
           console.log(`Email ${type} callback detected`);
           toast.success('Email confirmed successfully!');
-        } else if (provider === 'google') {
-          console.log('Google authentication callback detected');
-          setStatus('Google authentication confirmed! Setting up your account...');
         }
 
         // Get current session after confirmation
         const { data, error: sessionError } = await supabase.auth.getSession();
+        console.log("Session data:", data);
         
         if (sessionError) {
           console.error('Session error:', sessionError);
@@ -109,6 +111,7 @@ const AuthCallback = () => {
         }
 
         console.log("Ensuring user record exists for:", user.id);
+        console.log("User metadata:", user.user_metadata);
         
         // Check if user already exists in users table
         const { data: existingUser, error: fetchError } = await supabase
@@ -123,28 +126,32 @@ const AuthCallback = () => {
         }
         
         if (!existingUser) {
-          console.log("Creating new user record in users table with:", {
-            id: user.id,
-            email: user.email,
-            name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
-            role: user.email?.endsWith('@synjoint.com') ? 'admin' : 'user',
-            picture: user.user_metadata?.avatar_url || null
-          });
+          console.log("Creating new user record in users table");
           
           // Create new user record with multiple fallback approaches
           try {
+            // Get user info from Google metadata
+            const name = user.user_metadata?.name || 
+                         user.user_metadata?.full_name || 
+                         user.email?.split('@')[0] || 
+                         'User';
+            const email = user.email || '';
+            const picture = user.user_metadata?.avatar_url || null;
+            const role = email.endsWith('@synjoint.com') ? 'admin' : 'user';
+            
+            console.log("Creating user with data:", { name, email, picture, role });
+            
             // Approach 1: Create user with comprehensive data
             const userData = {
               id: user.id,
-              email: user.email || '',
-              name: user.user_metadata?.name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-              role: user.email?.endsWith('@synjoint.com') ? 'admin' : 'user',
+              email: email,
+              name: name,
+              role: role,
               count: 1,
-              picture: user.user_metadata?.avatar_url || null,
+              picture: picture,
               created_at: new Date().toISOString()
             };
 
-            console.log("Attempting to create user with data:", userData);
             const { error: insertError } = await supabase
               .from('users')
               .insert(userData);
@@ -158,9 +165,9 @@ const AuthCallback = () => {
                 .from('users')
                 .insert({
                   id: user.id,
-                  email: user.email || '',
-                  name: user.user_metadata?.name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-                  role: 'user'
+                  email: email,
+                  name: name,
+                  role: role
                 });
                 
               if (minimalInsertError) {
@@ -172,9 +179,9 @@ const AuthCallback = () => {
                   .from('users')
                   .upsert({
                     id: user.id,
-                    email: user.email || '',
-                    name: user.user_metadata?.name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-                    role: 'user'
+                    email: email,
+                    name: name,
+                    role: role
                   }, { onConflict: 'id' });
                   
                 if (upsertError) {

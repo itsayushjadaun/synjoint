@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -79,7 +78,6 @@ export const authAPI = {
   signUp: async (email: string, password: string, name: string) => {
     try {
       console.log(`Signing up user: ${email} with name: ${name}`);
-      // Sign up with Supabase Auth - EXPLICITLY include type=signup in the redirect URL
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -88,7 +86,6 @@ export const authAPI = {
             name,
             role: email.endsWith('@synjoint.com') ? 'admin' : 'user',
           },
-          // Make absolutely sure we're specifying type=signup in the redirect
           emailRedirectTo: `${window.location.origin}/auth/callback?type=signup`
         }
       });
@@ -123,7 +120,6 @@ export const authAPI = {
 
       console.log('User signed in successfully:', data.user);
       
-      // IMPORTANT: Check if user exists in users table and create if needed
       let attempts = 0;
       let maxAttempts = 3;
       let userCreated = false;
@@ -131,7 +127,6 @@ export const authAPI = {
       while (attempts < maxAttempts && !userCreated) {
         attempts++;
         try {
-          // Check if user exists in users table
           const { data: userData, error: userError } = await supabase
             .from('users')
             .select('*')
@@ -140,16 +135,12 @@ export const authAPI = {
           
           if (userError) {
             console.error(`Error fetching user profile (attempt ${attempts}/${maxAttempts}):`, userError);
-            // Continue to try creating the user
           }
           
-          // If no user record in users table, create one
           if (!userData) {
             console.log(`User authenticated but no profile found. Creating profile (attempt ${attempts}/${maxAttempts})...`);
             
-            // Try different approaches based on attempt
             if (attempts === 1) {
-              // Full approach
               const { error: createError } = await supabase
                 .from('users')
                 .insert({
@@ -168,7 +159,6 @@ export const authAPI = {
                 console.error(`Creation error (attempt ${attempts}):`, createError);
               }
             } else if (attempts === 2) {
-              // Minimal approach
               const { error: minimalError } = await supabase
                 .from('users')
                 .insert({
@@ -185,7 +175,6 @@ export const authAPI = {
                 console.error(`Minimal creation error (attempt ${attempts}):`, minimalError);
               }
             } else {
-              // Last resort approach
               console.log("Using upsert as last resort");
               const { error: upsertError } = await supabase
                 .from('users')
@@ -201,13 +190,11 @@ export const authAPI = {
                 userCreated = true;
               } else {
                 console.error(`Upsert error (attempt ${attempts}):`, upsertError);
-                // Even if all creation attempts fail, let the user continue
                 console.warn("All user creation attempts failed, but continuing login process");
               }
             }
           } else {
             console.log("User profile found, login successful");
-            // User exists, update count
             const { error: updateError } = await supabase
               .from('users')
               .update({ count: (userData.count || 0) + 1 })
@@ -219,10 +206,8 @@ export const authAPI = {
             userCreated = true;
           }
           
-          // Break the loop if user was created or found
           if (userCreated) break;
           
-          // Wait before retrying
           if (attempts < maxAttempts && !userCreated) {
             await new Promise(resolve => setTimeout(resolve, 500));
           }
@@ -231,8 +216,6 @@ export const authAPI = {
         }
       }
       
-      // Return successful login even if user creation in public table failed
-      // The auth already succeeded, and that's what matters for login
       return { data, error: null };
     } catch (error) {
       console.error('Unexpected Sign-in Error:', error);
@@ -243,7 +226,10 @@ export const authAPI = {
   signInWithGoogle: async () => {
     try {
       console.log("Initiating Google sign-in...");
-      // Using the new Google client ID from the environment variable
+      
+      const redirectUrl = `${window.location.origin}/auth/callback?provider=google`;
+      console.log("Using redirect URL:", redirectUrl);
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -251,7 +237,7 @@ export const authAPI = {
             access_type: 'offline',
             prompt: 'consent',
           },
-          redirectTo: `${window.location.origin}/auth/callback?provider=google`
+          redirectTo: redirectUrl
         }
       });
       
@@ -289,7 +275,6 @@ export const authAPI = {
         return { user: null, error: null };
       }
       
-      // Get the user's profile from the users table
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
@@ -317,7 +302,6 @@ export const authAPI = {
 export const contactAPI = {
   submitContactForm: async (name: string, email: string, message: string) => {
     try {
-      // Create a record in the contacts table
       const { data, error } = await supabase
         .from('contacts')
         .insert({
@@ -330,13 +314,6 @@ export const contactAPI = {
         .single();
         
       if (error) throw error;
-      
-      // Send email notification using Supabase Edge Functions (this part would need a separate Edge Function implementation)
-      // const { error: emailError } = await supabase.functions.invoke('send-contact-email', {
-      //   body: { name, email, message }
-      // });
-      // 
-      // if (emailError) throw emailError;
       
       return { data, error: null };
     } catch (error) {
