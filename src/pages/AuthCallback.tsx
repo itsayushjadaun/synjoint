@@ -31,6 +31,7 @@ const AuthCallback = () => {
         // Check if this is an email confirmation callback from URL parameters
         const urlParams = new URLSearchParams(location.search);
         const type = urlParams.get('type');
+        const provider = urlParams.get('provider');
         
         if (type === 'signup') {
           console.log(`Email signup confirmation detected`);
@@ -39,6 +40,9 @@ const AuthCallback = () => {
         } else if (type === 'recovery' || type === 'invite') {
           console.log(`Email ${type} callback detected`);
           toast.success('Email confirmed successfully!');
+        } else if (provider === 'google') {
+          console.log('Google authentication callback detected');
+          setStatus('Google authentication confirmed! Setting up your account...');
         }
 
         // Get current session after confirmation
@@ -123,7 +127,8 @@ const AuthCallback = () => {
             id: user.id,
             email: user.email,
             name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
-            role: user.email?.endsWith('@synjoint.com') ? 'admin' : 'user'
+            role: user.email?.endsWith('@synjoint.com') ? 'admin' : 'user',
+            picture: user.user_metadata?.avatar_url || null
           });
           
           // Create new user record with multiple fallback approaches
@@ -132,12 +137,14 @@ const AuthCallback = () => {
             const userData = {
               id: user.id,
               email: user.email || '',
-              name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+              name: user.user_metadata?.name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
               role: user.email?.endsWith('@synjoint.com') ? 'admin' : 'user',
               count: 1,
+              picture: user.user_metadata?.avatar_url || null,
               created_at: new Date().toISOString()
             };
 
+            console.log("Attempting to create user with data:", userData);
             const { error: insertError } = await supabase
               .from('users')
               .insert(userData);
@@ -152,26 +159,29 @@ const AuthCallback = () => {
                 .insert({
                   id: user.id,
                   email: user.email || '',
-                  name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+                  name: user.user_metadata?.name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
                   role: 'user'
                 });
                 
               if (minimalInsertError) {
                 console.error('Minimal insert also failed:', minimalInsertError);
                 
-                // Approach 3: Try RPC function approach as a last resort
-                console.log("Trying RPC approach");
-                const { error: rpcError } = await supabase.rpc('create_user_profile', {
-                  user_id: user.id,
-                  user_email: user.email || '',
-                  user_name: user.user_metadata?.name || user.email?.split('@')[0] || 'User'
-                });
-                
-                if (rpcError) {
-                  console.error('RPC approach also failed:', rpcError);
+                // Approach 3: Try upsert approach as a last resort
+                console.log("Trying upsert approach");
+                const { error: upsertError } = await supabase
+                  .from('users')
+                  .upsert({
+                    id: user.id,
+                    email: user.email || '',
+                    name: user.user_metadata?.name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+                    role: 'user'
+                  }, { onConflict: 'id' });
+                  
+                if (upsertError) {
+                  console.error('Upsert approach also failed:', upsertError);
                   return false;
                 } else {
-                  console.log("RPC user record created successfully");
+                  console.log("Upsert user record created successfully");
                   toast.success('Account created successfully!');
                   return true;
                 }
@@ -190,22 +200,23 @@ const AuthCallback = () => {
             return false;
           }
         } else {
-          console.log("User already exists in users table, updating count");
-          // Update existing user's count
+          console.log("User already exists in users table, updating count and picture if needed");
+          // Update existing user's count and picture if available from Google
           const { error: updateError } = await supabase
             .from('users')
             .update({ 
               count: (existingUser.count || 0) + 1,
-              picture: user.user_metadata?.avatar_url || existingUser.picture
+              picture: user.user_metadata?.avatar_url || existingUser.picture,
+              name: user.user_metadata?.name || user.user_metadata?.full_name || existingUser.name
             })
             .eq('id', user.id);
             
           if (updateError) {
-            console.error('Error updating user count:', updateError);
+            console.error('Error updating user data:', updateError);
             // Even if update fails, the user exists, so return true
             console.log("Update failed but user exists, continuing");
           } else {
-            console.log("User count updated successfully");
+            console.log("User data updated successfully");
           }
           toast.success('Successfully signed in!');
           return true;

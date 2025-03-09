@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -241,18 +242,28 @@ export const authAPI = {
   
   signInWithGoogle: async () => {
     try {
+      console.log("Initiating Google sign-in...");
+      // Using the new Google client ID from the environment variable
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+          redirectTo: `${window.location.origin}/auth/callback?provider=google`
         }
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Google sign-in error:', error);
+        throw error;
+      }
       
+      console.log("Google sign-in initiated successfully, redirecting to provider...");
       return { data, error: null };
     } catch (error) {
-      console.error('Google sign in error:', error);
+      console.error('Google sign-in error:', error);
       return { data: null, error };
     }
   },
