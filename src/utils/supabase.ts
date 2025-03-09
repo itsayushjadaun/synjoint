@@ -87,6 +87,7 @@ export const authAPI = {
             name,
             role: email.endsWith('@synjoint.com') ? 'admin' : 'user',
           },
+          // Make absolutely sure we're specifying type=signup in the redirect
           emailRedirectTo: `${window.location.origin}/auth/callback?type=signup`
         }
       });
@@ -121,11 +122,12 @@ export const authAPI = {
 
       console.log('User signed in successfully:', data.user);
       
-      // IMPORTANT: Always check and ensure user exists in users table with retry logic
+      // IMPORTANT: Check if user exists in users table and create if needed
       let attempts = 0;
+      let maxAttempts = 3;
       let userCreated = false;
       
-      while (attempts < 3 && !userCreated) {
+      while (attempts < maxAttempts && !userCreated) {
         attempts++;
         try {
           // Check if user exists in users table
@@ -136,55 +138,75 @@ export const authAPI = {
             .maybeSingle();
           
           if (userError) {
-            console.error(`Error fetching user profile (attempt ${attempts}):`, userError);
+            console.error(`Error fetching user profile (attempt ${attempts}/${maxAttempts}):`, userError);
             // Continue to try creating the user
           }
           
           // If no user record in users table, create one
           if (!userData) {
-            console.log(`User authenticated but no profile found. Creating profile (attempt ${attempts})...`);
-            const newUserData = {
-              id: data.user.id,
-              email: data.user.email || '',
-              name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User',
-              role: data.user.email?.endsWith('@synjoint.com') ? 'admin' : 'user',
-              count: 1,
-              created_at: new Date().toISOString()
-            };
+            console.log(`User authenticated but no profile found. Creating profile (attempt ${attempts}/${maxAttempts})...`);
             
-            const { error: createError } = await supabase
-              .from('users')
-              .insert(newUserData);
-            
-            if (createError) {
-              console.error(`Error creating user profile on login (attempt ${attempts}):`, createError);
-              
-              // On last attempt, try with minimal fields
-              if (attempts === 3) {
-                const { error: fallbackError } = await supabase
-                  .from('users')
-                  .insert({
-                    id: data.user.id,
-                    email: data.user.email || '',
-                    name: data.user.email?.split('@')[0] || 'User',
-                    role: 'user'
-                  });
-                  
-                if (fallbackError) {
-                  console.error('Even simplified user creation failed:', fallbackError);
-                  console.warn('User authenticated but profile not created. Some functionality may be limited.');
-                } else {
-                  console.log('Simplified user profile created on login');
-                  userCreated = true;
-                }
+            // Try different approaches based on attempt
+            if (attempts === 1) {
+              // Full approach
+              const { error: createError } = await supabase
+                .from('users')
+                .insert({
+                  id: data.user.id,
+                  email: data.user.email || '',
+                  name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User',
+                  role: data.user.email?.endsWith('@synjoint.com') ? 'admin' : 'user',
+                  count: 1,
+                  created_at: new Date().toISOString()
+                });
+                
+              if (!createError) {
+                console.log("User profile created successfully on login");
+                userCreated = true;
+              } else {
+                console.error(`Creation error (attempt ${attempts}):`, createError);
+              }
+            } else if (attempts === 2) {
+              // Minimal approach
+              const { error: minimalError } = await supabase
+                .from('users')
+                .insert({
+                  id: data.user.id,
+                  email: data.user.email || '',
+                  name: data.user.email?.split('@')[0] || 'User',
+                  role: 'user'
+                });
+                
+              if (!minimalError) {
+                console.log("Minimal user profile created on login");
+                userCreated = true;
+              } else {
+                console.error(`Minimal creation error (attempt ${attempts}):`, minimalError);
               }
             } else {
-              console.log('User profile created successfully on login');
-              userCreated = true;
+              // Last resort approach
+              console.log("Using upsert as last resort");
+              const { error: upsertError } = await supabase
+                .from('users')
+                .upsert({
+                  id: data.user.id,
+                  email: data.user.email || '',
+                  name: 'User',
+                  role: 'user'
+                }, { onConflict: 'id' });
+                
+              if (!upsertError) {
+                console.log("Upsert user profile created on login");
+                userCreated = true;
+              } else {
+                console.error(`Upsert error (attempt ${attempts}):`, upsertError);
+                // Even if all creation attempts fail, let the user continue
+                console.warn("All user creation attempts failed, but continuing login process");
+              }
             }
           } else {
-            console.log('User profile found:', userData);
-            // Update user count
+            console.log("User profile found, login successful");
+            // User exists, update count
             const { error: updateError } = await supabase
               .from('users')
               .update({ count: (userData.count || 0) + 1 })
@@ -200,14 +222,16 @@ export const authAPI = {
           if (userCreated) break;
           
           // Wait before retrying
-          if (attempts < 3 && !userCreated) {
+          if (attempts < maxAttempts && !userCreated) {
             await new Promise(resolve => setTimeout(resolve, 500));
           }
         } catch (error) {
-          console.error(`Unexpected error checking/creating user (attempt ${attempts}):`, error);
+          console.error(`Unexpected error in user creation (attempt ${attempts}):`, error);
         }
       }
       
+      // Return successful login even if user creation in public table failed
+      // The auth already succeeded, and that's what matters for login
       return { data, error: null };
     } catch (error) {
       console.error('Unexpected Sign-in Error:', error);

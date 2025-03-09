@@ -55,7 +55,20 @@ const AuthCallback = () => {
           setStatus('Creating your user profile...');
           
           // CRITICAL: Always ensure user record exists in users table
-          const userCreated = await ensureUserRecord(user);
+          // Try multiple times with different approaches if needed
+          let userCreated = false;
+          let attempts = 0;
+          
+          while (!userCreated && attempts < 3) {
+            attempts++;
+            console.log(`Attempt ${attempts} to create user record`);
+            userCreated = await ensureUserRecord(user);
+            
+            if (!userCreated && attempts < 3) {
+              // Wait a bit before retry
+              await new Promise(resolve => setTimeout(resolve, 500));
+            }
+          }
           
           if (userCreated) {
             setStatus('Account setup complete!');
@@ -65,7 +78,7 @@ const AuthCallback = () => {
               navigate('/');
             }, 1500);
           } else {
-            console.error("Failed to create user record");
+            console.error("Failed to create user record after multiple attempts");
             toast.error('Account setup failed. Please contact support.');
             navigate('/login');
           }
@@ -106,16 +119,23 @@ const AuthCallback = () => {
         }
         
         if (!existingUser) {
-          console.log("Creating new user record in users table");
-          // Create new user record with proper error handling
+          console.log("Creating new user record in users table with:", {
+            id: user.id,
+            email: user.email,
+            name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+            role: user.email?.endsWith('@synjoint.com') ? 'admin' : 'user'
+          });
           
+          // Create new user record with multiple fallback approaches
           try {
-            // Create new user record with minimal required fields first
+            // Approach 1: Create user with comprehensive data
             const userData = {
               id: user.id,
               email: user.email || '',
               name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
-              role: user.email?.endsWith('@synjoint.com') ? 'admin' : 'user'
+              role: user.email?.endsWith('@synjoint.com') ? 'admin' : 'user',
+              count: 1,
+              created_at: new Date().toISOString()
             };
 
             const { error: insertError } = await supabase
@@ -124,26 +144,39 @@ const AuthCallback = () => {
               
             if (insertError) {
               console.error('Error creating user record:', insertError);
-              console.error('Insert error details:', JSON.stringify(insertError));
               
-              // If the insert failed, try a more complete record
-              console.log("Trying complete user record creation");
-              const { error: completeInsertError } = await supabase
+              // Approach 2: Try minimal required fields approach
+              console.log("Trying minimal user record creation");
+              const { error: minimalInsertError } = await supabase
                 .from('users')
                 .insert({
                   id: user.id,
                   email: user.email || '',
                   name: user.user_metadata?.name || user.email?.split('@')[0] || 'User',
-                  role: user.email?.endsWith('@synjoint.com') ? 'admin' : 'user',
-                  count: 1,
-                  created_at: new Date().toISOString()
+                  role: 'user'
                 });
                 
-              if (completeInsertError) {
-                console.error('Complete insert also failed:', completeInsertError);
-                return false;
+              if (minimalInsertError) {
+                console.error('Minimal insert also failed:', minimalInsertError);
+                
+                // Approach 3: Try RPC function approach as a last resort
+                console.log("Trying RPC approach");
+                const { error: rpcError } = await supabase.rpc('create_user_profile', {
+                  user_id: user.id,
+                  user_email: user.email || '',
+                  user_name: user.user_metadata?.name || user.email?.split('@')[0] || 'User'
+                });
+                
+                if (rpcError) {
+                  console.error('RPC approach also failed:', rpcError);
+                  return false;
+                } else {
+                  console.log("RPC user record created successfully");
+                  toast.success('Account created successfully!');
+                  return true;
+                }
               } else {
-                console.log("Complete user record created successfully");
+                console.log("Minimal user record created successfully");
                 toast.success('Account created successfully!');
                 return true;
               }
@@ -169,12 +202,13 @@ const AuthCallback = () => {
             
           if (updateError) {
             console.error('Error updating user count:', updateError);
-            return false;
+            // Even if update fails, the user exists, so return true
+            console.log("Update failed but user exists, continuing");
           } else {
             console.log("User count updated successfully");
-            toast.success('Successfully signed in!');
-            return true;
           }
+          toast.success('Successfully signed in!');
+          return true;
         }
       } catch (error) {
         console.error('Error ensuring user record exists:', error);

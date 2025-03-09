@@ -66,22 +66,29 @@ const Login = () => {
       console.log(`Attempting to login with email: ${loginEmail}`);
       await login(loginEmail, loginPassword);
       
-      // Note: If we're still here after 3 seconds, something might be wrong
-      const loginTimeout = setTimeout(() => {
+      // Use a timeout to detect if login is taking too long, but clear it if component unmounts
+      let loginTimeoutId: number | undefined;
+      
+      loginTimeoutId = window.setTimeout(() => {
         if (!user) {
           setLoginError("Login is taking longer than expected. Please check your credentials and try again.");
           setLoginIsLoading(false);
           toast.error("Login timed out. Please try again.");
         }
-      }, 3000);
+      }, 8000); // Give more time for the operation
       
-      // Cleanup timeout if component unmounts
-      return () => clearTimeout(loginTimeout);
+      return () => {
+        if (loginTimeoutId) {
+          window.clearTimeout(loginTimeoutId);
+        }
+      };
     } catch (error: any) {
       console.error("Login error:", error);
       const errorMessage = error.message || "Invalid credentials. Please try again.";
       setLoginError(errorMessage);
       toast.error(errorMessage);
+    } finally {
+      // Always set loading to false in finally block to ensure it happens
       setLoginIsLoading(false);
     }
   };
