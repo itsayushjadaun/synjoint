@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Login = () => {
-  const { login, signup, isLoading, googleLogin, user } = useAuth();
+  const { login, signup, isLoading: authIsLoading, googleLogin, user } = useAuth();
   const navigate = useNavigate();
 
   // Check authentication state
@@ -62,33 +62,29 @@ const Login = () => {
     }
     
     setLoginIsLoading(true);
+    
+    // Set up a timeout to detect if login is taking too long
+    const loginTimeoutId = setTimeout(() => {
+      if (loginIsLoading) {
+        setLoginError("Login is taking longer than expected. Please try again.");
+        setLoginIsLoading(false);
+        toast.error("Login timed out. Please try again.");
+      }
+    }, 10000); // 10 seconds timeout
+    
     try {
       console.log(`Attempting to login with email: ${loginEmail}`);
       await login(loginEmail, loginPassword);
       
-      // Use a timeout to detect if login is taking too long, but clear it if component unmounts
-      let loginTimeoutId: number | undefined;
-      
-      loginTimeoutId = window.setTimeout(() => {
-        if (!user) {
-          setLoginError("Login is taking longer than expected. Please check your credentials and try again.");
-          setLoginIsLoading(false);
-          toast.error("Login timed out. Please try again.");
-        }
-      }, 8000); // Give more time for the operation
-      
-      return () => {
-        if (loginTimeoutId) {
-          window.clearTimeout(loginTimeoutId);
-        }
-      };
+      // If login is successful, user state will be updated and the useEffect will redirect
     } catch (error: any) {
       console.error("Login error:", error);
       const errorMessage = error.message || "Invalid credentials. Please try again.";
       setLoginError(errorMessage);
       toast.error(errorMessage);
     } finally {
-      // Always set loading to false in finally block to ensure it happens
+      // Always clear the timeout and set loading to false in finally block
+      clearTimeout(loginTimeoutId);
       setLoginIsLoading(false);
     }
   };
@@ -246,7 +242,11 @@ const Login = () => {
                   </div>
                 </CardContent>
                 <CardFooter className="flex flex-col">
-                  <Button type="submit" className="w-full bg-synjoint-blue hover:bg-synjoint-blue/90" disabled={loginIsLoading}>
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-synjoint-blue hover:bg-synjoint-blue/90" 
+                    disabled={loginIsLoading || authIsLoading}
+                  >
                     {loginIsLoading ? (
                       <div className="flex items-center">
                         <div className="animate-spin mr-2 h-4 w-4 border-b-2 rounded-full border-white"></div>
@@ -265,7 +265,13 @@ const Login = () => {
                   </div>
 
                   <div className="mt-6 w-full">
-                    <Button type="button" variant="outline" className="w-full" onClick={handleGoogleLogin} disabled={isLoading || loginIsLoading}>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      className="w-full" 
+                      onClick={handleGoogleLogin} 
+                      disabled={authIsLoading || loginIsLoading}
+                    >
                       Sign in with Google
                     </Button>
                   </div>
