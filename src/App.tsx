@@ -40,24 +40,6 @@ const App = () => {
     } else {
       document.documentElement.classList.remove('dark');
     }
-
-    // Listen for system preference changes
-    const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleDarkModeChange = (e: MediaQueryListEvent) => {
-      if (!localStorage.getItem('theme')) {
-        if (e.matches) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
-      }
-    };
-    
-    darkModeMediaQuery.addEventListener('change', handleDarkModeChange);
-    
-    return () => {
-      darkModeMediaQuery.removeEventListener('change', handleDarkModeChange);
-    };
   }, []);
 
   return (
