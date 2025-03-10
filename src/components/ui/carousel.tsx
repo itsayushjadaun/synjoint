@@ -1,4 +1,3 @@
-
 import * as React from "react"
 import useEmblaCarousel, {
   type UseEmblaCarouselType,
@@ -18,7 +17,6 @@ type CarouselProps = {
   plugins?: CarouselPlugin
   orientation?: "horizontal" | "vertical"
   setApi?: (api: CarouselApi) => void
-  onSelect?: (api: CarouselApi) => void
 }
 
 type CarouselContextProps = {
@@ -28,7 +26,6 @@ type CarouselContextProps = {
   scrollNext: () => void
   canScrollPrev: boolean
   canScrollNext: boolean
-  selectedIndex: number
 } & CarouselProps
 
 const CarouselContext = React.createContext<CarouselContextProps | null>(null)
@@ -55,7 +52,6 @@ const Carousel = React.forwardRef<
       plugins,
       className,
       children,
-      onSelect,
       ...props
     },
     ref
@@ -69,18 +65,15 @@ const Carousel = React.forwardRef<
     )
     const [canScrollPrev, setCanScrollPrev] = React.useState(false)
     const [canScrollNext, setCanScrollNext] = React.useState(false)
-    const [selectedIndex, setSelectedIndex] = React.useState(0)
 
-    const onSelectHandler = React.useCallback((api: CarouselApi) => {
+    const onSelect = React.useCallback((api: CarouselApi) => {
       if (!api) {
         return
       }
 
       setCanScrollPrev(api.canScrollPrev())
       setCanScrollNext(api.canScrollNext())
-      setSelectedIndex(api.selectedScrollSnap())
-      onSelect?.(api)
-    }, [onSelect])
+    }, [])
 
     const scrollPrev = React.useCallback(() => {
       api?.scrollPrev()
@@ -116,14 +109,14 @@ const Carousel = React.forwardRef<
         return
       }
 
-      onSelectHandler(api)
-      api.on("reInit", onSelectHandler)
-      api.on("select", onSelectHandler)
+      onSelect(api)
+      api.on("reInit", onSelect)
+      api.on("select", onSelect)
 
       return () => {
-        api?.off("select", onSelectHandler)
+        api?.off("select", onSelect)
       }
-    }, [api, onSelectHandler])
+    }, [api, onSelect])
 
     return (
       <CarouselContext.Provider
@@ -137,7 +130,6 @@ const Carousel = React.forwardRef<
           scrollNext,
           canScrollPrev,
           canScrollNext,
-          selectedIndex,
         }}
       >
         <div
@@ -212,9 +204,9 @@ const CarouselPrevious = React.forwardRef<
       variant={variant}
       size={size}
       className={cn(
-        "rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-0",
+        "absolute  h-8 w-8 rounded-full",
         orientation === "horizontal"
-          ? ""
+          ? "-left-12 top-1/2 -translate-y-1/2"
           : "-top-12 left-1/2 -translate-x-1/2 rotate-90",
         className
       )}
@@ -222,7 +214,7 @@ const CarouselPrevious = React.forwardRef<
       onClick={scrollPrev}
       {...props}
     >
-      <ArrowLeft className="h-4 w-4 text-gray-700 dark:text-gray-300" />
+      <ArrowLeft className="h-4 w-4" />
       <span className="sr-only">Previous slide</span>
     </Button>
   )
@@ -241,9 +233,9 @@ const CarouselNext = React.forwardRef<
       variant={variant}
       size={size}
       className={cn(
-        "rounded-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-0",
+        "absolute h-8 w-8 rounded-full",
         orientation === "horizontal"
-          ? ""
+          ? "-right-12 top-1/2 -translate-y-1/2"
           : "-bottom-12 left-1/2 -translate-x-1/2 rotate-90",
         className
       )}
@@ -251,7 +243,7 @@ const CarouselNext = React.forwardRef<
       onClick={scrollNext}
       {...props}
     >
-      <ArrowRight className="h-4 w-4 text-gray-700 dark:text-gray-300" />
+      <ArrowRight className="h-4 w-4" />
       <span className="sr-only">Next slide</span>
     </Button>
   )
