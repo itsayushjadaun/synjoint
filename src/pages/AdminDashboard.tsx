@@ -97,7 +97,7 @@ const AdminDashboard = () => {
             <CardContent>
               <div className="space-y-4">
                 {[...blogs, ...careers]
-                  .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                  .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
                   .slice(0, 5)
                   .map((item) => (
                     <div key={item.id} className="flex items-center pb-4 border-b">
@@ -109,7 +109,7 @@ const AdminDashboard = () => {
                       <div>
                         <p className="font-medium">{item.title}</p>
                         <p className="text-sm text-gray-500">
-                          {new Date(item.date).toLocaleDateString('en-US', {
+                          {new Date(item.created_at).toLocaleDateString('en-US', {
                             year: 'numeric',
                             month: 'long',
                             day: 'numeric'
