@@ -10,6 +10,13 @@ import Testimonials from "../components/Testimonials";
 import News from "../components/News";
 import Certifications from "../components/Certifications";
 import CallToAction from "../components/CallToAction";
+import { 
+  Carousel, 
+  CarouselContent, 
+  CarouselItem, 
+  CarouselNext, 
+  CarouselPrevious 
+} from "@/components/ui/carousel";
 
 const Index = () => {
   useEffect(() => {
@@ -28,13 +35,23 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-gray-900">
       <Navbar />
-      <Hero />
-      <Mission />
-      <Statistics />
-      <Features />
-      <ProductsPreview />
+      
+      <Carousel className="w-full">
+        <CarouselContent>
+          <CarouselItem><Hero /></CarouselItem>
+          <CarouselItem><Mission /></CarouselItem>
+          <CarouselItem><Statistics /></CarouselItem>
+          <CarouselItem><Features /></CarouselItem>
+          <CarouselItem><ProductsPreview /></CarouselItem>
+        </CarouselContent>
+        <div className="hidden md:block">
+          <CarouselPrevious className="left-4" />
+          <CarouselNext className="right-4" />
+        </div>
+      </Carousel>
+
       <Certifications />
       <News />
       <Testimonials />

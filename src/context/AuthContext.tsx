@@ -1,9 +1,8 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
-import { supabase, authAPI } from '../utils/supabase';
+import { supabase, authAPI, blogAPI, careerAPI } from '../utils/supabase';
 import { User, Session } from '@supabase/supabase-js';
-import { BlogPost, CareerPost, blogDB, careerDB } from '../utils/db';
 
 interface AuthUser {
   id: string;
@@ -13,6 +12,27 @@ interface AuthUser {
   picture?: string;
   count: number;
   profile?: any;
+}
+
+interface BlogPost {
+  id: string;
+  title: string;
+  content: string;
+  image_url: string;
+  author_name: string;
+  author_id: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+interface CareerPost {
+  id: string;
+  title: string;
+  description: string;
+  requirements: string[];
+  location: string;
+  created_at: string;
+  updated_at?: string;
 }
 
 interface AuthContextType {
@@ -25,10 +45,12 @@ interface AuthContextType {
   googleLogin: () => Promise<void>;
   blogs: BlogPost[];
   careers: CareerPost[];
-  addBlog: (blog: Omit<BlogPost, 'id' | 'author' | 'authorId' | 'date'>) => Promise<void>;
-  addCareer: (career: Omit<CareerPost, 'id' | 'date'>) => Promise<void>;
+  addBlog: (blog: Omit<BlogPost, 'id' | 'author_name' | 'author_id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  addCareer: (career: Omit<CareerPost, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
   refreshBlogs: () => Promise<void>;
   refreshCareers: () => Promise<void>;
+  darkMode: boolean;
+  toggleDarkMode: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,7 +60,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [careers, setCareers] = useState<CareerPost[]>([]);
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode');
+    return saved === 'true' ? true : false;
+  });
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('darkMode', darkMode.toString());
+  }, [darkMode]);
+
+  const toggleDarkMode = () => {
+    setDarkMode(prev => !prev);
+  };
 
   useEffect(() => {
     const initializeData = async () => {
@@ -86,6 +125,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               picture: currentUser.user_metadata.avatar_url || currentUser.profile?.picture,
               count: currentUser.profile?.count || 1
             });
+            
+            await refreshBlogs();
+            await refreshCareers();
           }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
@@ -102,8 +144,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const refreshBlogs = async () => {
     try {
-      const dbBlogs = await blogDB.getAll();
-      setBlogs(dbBlogs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+      const { data, error } = await blogAPI.getAll();
+      if (error) throw error;
+      
+      if (data) {
+        setBlogs(data);
+      }
     } catch (error) {
       console.error('Error loading blogs:', error);
       toast.error('Failed to load blog posts');
@@ -112,8 +158,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const refreshCareers = async () => {
     try {
-      const dbCareers = await careerDB.getAll();
-      setCareers(dbCareers.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+      const { data, error } = await careerAPI.getAll();
+      if (error) throw error;
+      
+      if (data) {
+        setCareers(data);
+      }
     } catch (error) {
       console.error('Error loading careers:', error);
       toast.error('Failed to load career posts');
@@ -212,51 +262,52 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const addBlog = async (blog: Omit<BlogPost, 'id' | 'author' | 'authorId' | 'date'>) => {
+  const addBlog = async (blog: Omit<BlogPost, 'id' | 'author_name' | 'author_id' | 'created_at' | 'updated_at'>) => {
     if (!user || user.role !== 'admin') {
       toast.error("Only admins can add blog posts");
       return;
     }
     
     try {
-      const newBlog: BlogPost = {
-        ...blog,
-        id: Date.now().toString(),
-        author: user.name,
-        authorId: user.id,
-        date: new Date().toISOString().split('T')[0]
-      };
+      const { data, error } = await blogAPI.add({
+        title: blog.title,
+        content: blog.content,
+        image_url: blog.image_url || '/lovable-uploads/cef8ce24-f36c-4060-8c3e-41ce14874770.png'
+      });
       
-      await blogDB.add(newBlog);
+      if (error) throw error;
+      
       await refreshBlogs();
       toast.success("Blog post created successfully!");
       navigate('/blogs');
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error adding blog:", error);
-      toast.error("Failed to create blog post");
+      toast.error(error.message || "Failed to create blog post");
     }
   };
 
-  const addCareer = async (career: Omit<CareerPost, 'id' | 'date'>) => {
+  const addCareer = async (career: Omit<CareerPost, 'id' | 'created_at' | 'updated_at'>) => {
     if (!user || user.role !== 'admin') {
       toast.error("Only admins can add career postings");
       return;
     }
     
     try {
-      const newCareer: CareerPost = {
-        ...career,
-        id: Date.now().toString(),
-        date: new Date().toISOString().split('T')[0]
-      };
+      const { data, error } = await careerAPI.add({
+        title: career.title,
+        description: career.description,
+        requirements: career.requirements,
+        location: career.location
+      });
       
-      await careerDB.add(newCareer);
+      if (error) throw error;
+      
       await refreshCareers();
       toast.success("Career posting created successfully!");
       navigate('/careers');
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error adding career:", error);
-      toast.error("Failed to create career posting");
+      toast.error(error.message || "Failed to create career posting");
     }
   };
 
@@ -274,7 +325,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       addBlog,
       addCareer,
       refreshBlogs,
-      refreshCareers
+      refreshCareers,
+      darkMode,
+      toggleDarkMode
     }}>
       {children}
     </AuthContext.Provider>

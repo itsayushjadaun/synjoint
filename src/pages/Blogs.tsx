@@ -6,13 +6,18 @@ import { useAuth } from "../context/AuthContext";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
+import { useEffect } from "react";
 
 const Blogs = () => {
-  const { blogs, user } = useAuth();
+  const { blogs, user, refreshBlogs } = useAuth();
   const isAdmin = user?.role === 'admin';
+  
+  useEffect(() => {
+    refreshBlogs();
+  }, [refreshBlogs]);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-gray-900">
       <Navbar />
       <div className="pt-32 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto pb-16">
         <div className="flex justify-between items-center mb-8">
@@ -20,7 +25,7 @@ const Blogs = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="text-4xl font-bold text-gray-900"
+            className="text-4xl font-bold text-gray-900 dark:text-white"
           >
             Latest Blogs
           </motion.h1>
@@ -55,7 +60,7 @@ const Blogs = () => {
           </motion.div>
         ) : (
           <div className="text-center py-12">
-            <p className="text-gray-600">No blog posts available yet.</p>
+            <p className="text-gray-600 dark:text-gray-300">No blog posts available yet.</p>
           </div>
         )}
       </div>

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, X } from "lucide-react";
+import { toast } from "sonner";
 
 const CreateCareer = () => {
   const { user, addCareer } = useAuth();
@@ -46,7 +47,7 @@ const CreateCareer = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !description || !location) {
-      alert("Please fill in all required fields");
+      toast.error("Please fill in all required fields");
       return;
     }
     
@@ -54,13 +55,13 @@ const CreateCareer = () => {
     const filteredRequirements = requirements.filter(req => req.trim() !== "");
     
     if (filteredRequirements.length === 0) {
-      alert("Please add at least one requirement");
+      toast.error("Please add at least one requirement");
       return;
     }
     
     setIsSubmitting(true);
     try {
-      addCareer({ 
+      await addCareer({ 
         title, 
         description,
         requirements: filteredRequirements,
@@ -78,63 +79,65 @@ const CreateCareer = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Navbar />
       <div className="pt-32 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto pb-16">
-        <h1 className="text-4xl font-bold text-gray-900 mb-8">Create New Career Listing</h1>
+        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">Create New Career Listing</h1>
         
-        <Card>
+        <Card className="dark:bg-gray-800">
           <form onSubmit={handleSubmit}>
             <CardHeader>
-              <CardTitle>Job Details</CardTitle>
-              <CardDescription>
+              <CardTitle className="dark:text-white">Job Details</CardTitle>
+              <CardDescription className="dark:text-gray-300">
                 Enter the details for your new career opportunity
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="title">Job Title</Label>
+                <Label htmlFor="title" className="dark:text-white">Job Title</Label>
                 <Input
                   id="title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Enter job title"
                   required
+                  className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="description">Job Description</Label>
+                <Label htmlFor="description" className="dark:text-white">Job Description</Label>
                 <Textarea
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Write the job description here..."
-                  className="min-h-[150px]"
+                  className="min-h-[150px] dark:bg-gray-700 dark:text-white dark:border-gray-600"
                   required
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="location">Location</Label>
+                <Label htmlFor="location" className="dark:text-white">Location</Label>
                 <Input
                   id="location"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   placeholder="Enter job location"
                   required
+                  className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 />
               </div>
               
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label>Requirements</Label>
+                  <Label className="dark:text-white">Requirements</Label>
                   <Button 
                     type="button" 
                     variant="outline" 
                     size="sm" 
                     onClick={addRequirement}
-                    className="h-8"
+                    className="h-8 dark:border-gray-600 dark:text-white"
                   >
                     <Plus className="h-4 w-4 mr-1" />
                     Add Requirement
@@ -147,12 +150,13 @@ const CreateCareer = () => {
                       value={req}
                       onChange={(e) => updateRequirement(index, e.target.value)}
                       placeholder="Enter requirement"
+                      className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
                     />
                     {requirements.length > 1 && (
                       <Button 
                         type="button" 
                         variant="ghost" 
-                        className="px-2 text-gray-500 hover:text-red-500"
+                        className="px-2 text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400"
                         onClick={() => removeRequirement(index)}
                       >
                         <X className="h-4 w-4" />
@@ -163,7 +167,12 @@ const CreateCareer = () => {
               </div>
             </CardContent>
             <CardFooter className="flex justify-between">
-              <Button type="button" variant="outline" onClick={() => navigate('/admin')}>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => navigate('/admin')}
+                className="dark:border-gray-600 dark:text-white"
+              >
                 Cancel
               </Button>
               <Button 

@@ -70,6 +70,61 @@ export type Database = {
           created_at?: string;
         };
       };
+      blogs: {
+        Row: {
+          id: string;
+          title: string;
+          content: string;
+          image_url: string;
+          author_id: string;
+          author_name: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          content: string;
+          image_url: string;
+          author_id?: string;
+          author_name?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          content?: string;
+          image_url?: string;
+          author_id?: string;
+          author_name?: string;
+          created_at?: string;
+        };
+      };
+      careers: {
+        Row: {
+          id: string;
+          title: string;
+          description: string;
+          requirements: string[];
+          location: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          description: string;
+          requirements: string[];
+          location: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          description?: string;
+          requirements?: string[];
+          location?: string;
+          created_at?: string;
+        };
+      };
     };
   };
 };
@@ -319,6 +374,159 @@ export const contactAPI = {
     } catch (error) {
       console.error('Contact form submission error:', error);
       return { data: null, error };
+    }
+  }
+};
+
+export const blogAPI = {
+  getAll: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('blogs')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      
+      return { data, error: null };
+    } catch (error) {
+      console.error('Error fetching blogs:', error);
+      return { data: null, error };
+    }
+  },
+  
+  getById: async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('blogs')
+        .select('*')
+        .eq('id', id)
+        .single();
+        
+      if (error) throw error;
+      
+      return { data, error: null };
+    } catch (error) {
+      console.error(`Error fetching blog with id ${id}:`, error);
+      return { data: null, error };
+    }
+  },
+  
+  add: async (blog: { title: string, content: string, image_url: string }) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('User not authenticated');
+      }
+      
+      const { data, error } = await supabase
+        .from('blogs')
+        .insert({
+          title: blog.title,
+          content: blog.content,
+          image_url: blog.image_url,
+          author_id: session.user.id,
+          author_name: session.user.user_metadata.name || session.user.email
+        })
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      return { data, error: null };
+    } catch (error) {
+      console.error('Error adding blog:', error);
+      return { data: null, error };
+    }
+  },
+  
+  delete: async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('blogs')
+        .delete()
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      return { error: null };
+    } catch (error) {
+      console.error(`Error deleting blog with id ${id}:`, error);
+      return { error };
+    }
+  }
+};
+
+export const careerAPI = {
+  getAll: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('careers')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      
+      return { data, error: null };
+    } catch (error) {
+      console.error('Error fetching careers:', error);
+      return { data: null, error };
+    }
+  },
+  
+  getById: async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('careers')
+        .select('*')
+        .eq('id', id)
+        .single();
+        
+      if (error) throw error;
+      
+      return { data, error: null };
+    } catch (error) {
+      console.error(`Error fetching career with id ${id}:`, error);
+      return { data: null, error };
+    }
+  },
+  
+  add: async (career: { title: string, description: string, requirements: string[], location: string }) => {
+    try {
+      const { data, error } = await supabase
+        .from('careers')
+        .insert({
+          title: career.title,
+          description: career.description,
+          requirements: career.requirements,
+          location: career.location
+        })
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      return { data, error: null };
+    } catch (error) {
+      console.error('Error adding career:', error);
+      return { data: null, error };
+    }
+  },
+  
+  delete: async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('careers')
+        .delete()
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      return { error: null };
+    } catch (error) {
+      console.error(`Error deleting career with id ${id}:`, error);
+      return { error };
     }
   }
 };
