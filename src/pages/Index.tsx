@@ -17,6 +17,9 @@ import {
   CarouselNext, 
   CarouselPrevious 
 } from "@/components/ui/carousel";
+import Awards from "../components/Awards";
+import Events from "../components/Events";
+import Partnerships from "../components/Partnerships";
 
 const Index = () => {
   useEffect(() => {
@@ -45,6 +48,9 @@ const Index = () => {
           <CarouselItem><Statistics /></CarouselItem>
           <CarouselItem><Features /></CarouselItem>
           <CarouselItem><ProductsPreview /></CarouselItem>
+          <CarouselItem><Awards /></CarouselItem>
+          <CarouselItem><Events /></CarouselItem>
+          <CarouselItem><Partnerships /></CarouselItem>
         </CarouselContent>
         <div className="hidden md:block">
           <CarouselPrevious className="left-4" />
