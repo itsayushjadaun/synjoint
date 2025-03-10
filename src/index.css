@@ -75,6 +75,19 @@
     @apply bg-background text-foreground transition-colors duration-300;
   }
   
+  /* Global text styles */
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-gray-900 font-bold;
+  }
+  
+  p, span, div {
+    @apply text-gray-700;
+  }
+  
+  a:not(.btn) {
+    @apply text-blue-600 hover:text-blue-800;
+  }
+  
   /* Dark mode specific text styles */
   .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
     @apply text-gray-100;
@@ -161,6 +174,42 @@ html {
   @apply text-gray-100;
 }
 
+/* Mobile specific styles */
+@media (max-width: 768px) {
+  h1 {
+    @apply text-3xl;
+  }
+  
+  h2 {
+    @apply text-2xl;
+  }
+  
+  h3 {
+    @apply text-xl;
+  }
+  
+  .carousel-controls {
+    @apply bottom-4 left-0 right-0 justify-center;
+  }
+  
+  /* Improve touch targets for mobile */
+  button, 
+  a, 
+  [role="button"] {
+    @apply min-h-[44px] min-w-[44px];
+  }
+  
+  /* Adjust spacing for mobile */
+  .section {
+    @apply py-8 px-4;
+  }
+  
+  /* Improve readability on small screens */
+  p, li {
+    @apply leading-relaxed;
+  }
+}
+
 /* Animations for page transitions */
 .page-transition-enter {
   opacity: 0;
@@ -182,4 +231,19 @@ html {
   opacity: 0;
   transform: translateY(20px);
   transition: opacity 400ms, transform 400ms;
+}
+
+/* Carousel specific adjustments for mobile */
+@media (max-width: 768px) {
+  .carousel-item {
+    @apply h-screen overflow-y-auto;
+  }
+  
+  .carousel-nav {
+    @apply fixed bottom-4 left-0 right-0 z-50;
+  }
+  
+  .carousel-arrow {
+    @apply h-10 w-10 opacity-60;
+  }
 }
