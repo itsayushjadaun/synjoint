@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 import { Menu, X, Search, User, LogOut, FileText, Briefcase } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "@/components/ui/button";
-import DarkModeToggle from "./DarkModeToggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,12 +42,11 @@ const Navbar = () => {
   return (
     <>
       {/* Top Bar */}
-      <div className="bg-synjoint-blue text-white py-2 dark:bg-gray-900">
+      <div className="bg-synjoint-blue text-white py-2">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <div className="flex-1 hidden md:block"></div>
           
           <div className="flex items-center space-x-4 ml-auto">
-            <DarkModeToggle />
             <div className="relative">
               <select
                 value={selectedLanguage}
@@ -133,7 +131,7 @@ const Navbar = () => {
       {/* Main Navigation */}
       <nav
         className={`w-full z-50 transition-all duration-300 ${
-          isScrolled ? "bg-white shadow-sm dark:bg-gray-800 dark:shadow-gray-900" : "bg-white dark:bg-gray-800"
+          isScrolled ? "bg-white shadow-sm" : "bg-white"
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
