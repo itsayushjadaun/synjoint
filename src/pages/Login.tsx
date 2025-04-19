@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
@@ -74,6 +75,8 @@ const Login = () => {
     try {
       console.log(`Attempting to login with email: ${loginEmail}`);
       await login(loginEmail, loginPassword);
+      // Clear timeout as login attempt has completed
+      clearTimeout(loginTimeoutId);
       
       // If login is successful, user state will be updated and the useEffect will redirect
     } catch (error: any) {
@@ -81,9 +84,10 @@ const Login = () => {
       const errorMessage = error.message || "Invalid credentials. Please try again.";
       setLoginError(errorMessage);
       toast.error(errorMessage);
-    } finally {
-      // Always clear the timeout and set loading to false in finally block
+      
+      // Clear timeout as login attempt has completed with an error
       clearTimeout(loginTimeoutId);
+    } finally {
       setLoginIsLoading(false);
     }
   };
@@ -245,7 +249,7 @@ const Login = () => {
                 <CardFooter className="flex flex-col">
                   <Button 
                     type="submit" 
-                    className="w-full bg-synjoint-blue hover:bg-synjoint-blue/90 relative z-10"
+                    className="w-full bg-synjoint-blue hover:bg-synjoint-blue/90 dark:bg-blue-600 dark:hover:bg-blue-700 relative z-0"
                     disabled={loginIsLoading || authIsLoading}
                   >
                     {loginIsLoading ? (
@@ -343,7 +347,7 @@ const Login = () => {
                 <CardFooter className="flex flex-col">
                   <Button 
                     type="submit" 
-                    className="w-full bg-synjoint-blue hover:bg-synjoint-blue/90 relative z-10" 
+                    className="w-full bg-synjoint-blue hover:bg-synjoint-blue/90 dark:bg-blue-600 dark:hover:bg-blue-700 relative z-0" 
                     disabled={signupIsLoading}
                   >
                     {signupIsLoading ? "Creating Account..." : "Create Account"}
