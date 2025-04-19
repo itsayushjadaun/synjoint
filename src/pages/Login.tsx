@@ -253,7 +253,7 @@ const Login = () => {
                     type="submit" 
                     className="w-full bg-synjoint-blue hover:bg-synjoint-blue/90 dark:bg-blue-600 dark:hover:bg-blue-700"
                     disabled={loginIsLoading || authIsLoading}
-                    style={{ position: 'relative', zIndex: 5 }}
+                    style={{ position: 'relative', zIndex: 50 }}
                   >
                     {loginIsLoading ? (
                       <div className="flex items-center">
@@ -279,7 +279,7 @@ const Login = () => {
                       className="w-full dark:text-white dark:border-gray-600" 
                       onClick={handleGoogleLogin} 
                       disabled={authIsLoading || loginIsLoading}
-                      style={{ position: 'relative', zIndex: 5 }}
+                      style={{ position: 'relative', zIndex: 50 }}
                     >
                       Sign in with Google
                     </Button>
@@ -353,7 +353,7 @@ const Login = () => {
                     type="submit" 
                     className="w-full bg-synjoint-blue hover:bg-synjoint-blue/90 dark:bg-blue-600 dark:hover:bg-blue-700" 
                     disabled={signupIsLoading}
-                    style={{ position: 'relative', zIndex: 5 }}
+                    style={{ position: 'relative', zIndex: 50 }}
                   >
                     {signupIsLoading ? "Creating Account..." : "Create Account"}
                   </Button>

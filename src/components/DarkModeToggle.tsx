@@ -1,25 +1,29 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/components/ui/use-toast";
-import { useAuth } from '../context/AuthContext';
 
 const DarkModeToggle = () => {
-  const { darkMode, toggleDarkMode } = useAuth();
+  const [darkMode, setDarkMode] = useState(() => {
+    // Get from localStorage or default to false
+    const saved = localStorage.getItem('darkMode');
+    return saved === 'true' ? true : false;
+  });
   const { toast } = useToast();
 
   useEffect(() => {
-    // Set the dark mode class based on the context
+    // Set the dark mode class based on state
     if (darkMode) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
+    localStorage.setItem('darkMode', darkMode.toString());
   }, [darkMode]);
 
   const handleToggleDarkMode = () => {
-    toggleDarkMode();
+    setDarkMode(prev => !prev);
     
     toast({
       title: darkMode ? "Light mode activated" : "Dark mode activated",
