@@ -33,7 +33,8 @@ const DarkModeToggle = () => {
       variant="ghost"
       size="sm"
       onClick={handleToggleDarkMode}
-      className="w-9 px-0 relative z-20"
+      className="w-9 px-0"
+      style={{ position: 'relative', zIndex: 10 }}
       aria-label="Toggle dark mode"
     >
       {darkMode ? <Sun className="h-5 w-5 text-yellow-400" /> : <Moon className="h-5 w-5" />}

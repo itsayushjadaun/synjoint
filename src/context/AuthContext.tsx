@@ -131,6 +131,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
+        } else if (event === 'USER_UPDATED') {
+          if (session?.user) {
+            const { user: currentUser } = await authAPI.getCurrentUser();
+            if (currentUser) {
+              setUser({
+                id: currentUser.id,
+                email: currentUser.email || '',
+                name: currentUser.user_metadata.name || currentUser.profile?.name || currentUser.email?.split('@')[0] || 'User',
+                role: currentUser.profile?.role || (currentUser.email?.endsWith('@synjoint.com') ? 'admin' : 'user'),
+                picture: currentUser.user_metadata.avatar_url || currentUser.profile?.picture,
+                count: currentUser.profile?.count || 1
+              });
+              
+              if (currentUser.email_confirmed_at) {
+                toast.success("Email confirmed successfully!");
+              }
+            }
+          }
         }
       }
     );
@@ -178,6 +196,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (error) {
         console.error("Login error:", error);
+        
+        if (error.message && error.message.toLowerCase().includes("email") && error.message.toLowerCase().includes("confirm")) {
+          toast.error("Please confirm your email before logging in. Check your inbox (and spam folder).");
+          setIsLoading(false);
+          return;
+        }
+        
         toast.error(error.message || "Invalid credentials. Please check your email and password.");
         setIsLoading(false);
         return;

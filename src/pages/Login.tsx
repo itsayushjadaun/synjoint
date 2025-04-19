@@ -47,6 +47,7 @@ const Login = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent event bubbling
     setLoginError(null);
     
     if (!loginEmail || !loginPassword) {
@@ -94,6 +95,7 @@ const Login = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent event bubbling
     setSignupError(null);
     
     if (!signupName || !signupEmail || !signupPassword || !signupConfirmPassword) {
@@ -249,8 +251,9 @@ const Login = () => {
                 <CardFooter className="flex flex-col">
                   <Button 
                     type="submit" 
-                    className="w-full bg-synjoint-blue hover:bg-synjoint-blue/90 dark:bg-blue-600 dark:hover:bg-blue-700 relative z-0"
+                    className="w-full bg-synjoint-blue hover:bg-synjoint-blue/90 dark:bg-blue-600 dark:hover:bg-blue-700"
                     disabled={loginIsLoading || authIsLoading}
+                    style={{ position: 'relative', zIndex: 5 }}
                   >
                     {loginIsLoading ? (
                       <div className="flex items-center">
@@ -276,6 +279,7 @@ const Login = () => {
                       className="w-full dark:text-white dark:border-gray-600" 
                       onClick={handleGoogleLogin} 
                       disabled={authIsLoading || loginIsLoading}
+                      style={{ position: 'relative', zIndex: 5 }}
                     >
                       Sign in with Google
                     </Button>
@@ -347,8 +351,9 @@ const Login = () => {
                 <CardFooter className="flex flex-col">
                   <Button 
                     type="submit" 
-                    className="w-full bg-synjoint-blue hover:bg-synjoint-blue/90 dark:bg-blue-600 dark:hover:bg-blue-700 relative z-0" 
+                    className="w-full bg-synjoint-blue hover:bg-synjoint-blue/90 dark:bg-blue-600 dark:hover:bg-blue-700" 
                     disabled={signupIsLoading}
+                    style={{ position: 'relative', zIndex: 5 }}
                   >
                     {signupIsLoading ? "Creating Account..." : "Create Account"}
                   </Button>
