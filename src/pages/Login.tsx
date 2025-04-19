@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
@@ -151,13 +150,13 @@ const Login = () => {
 
   if (signupComplete) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <Navbar />
         <div className="pt-32 px-4 sm:px-6 lg:px-8 max-w-md mx-auto">
-          <Card>
+          <Card className="dark:bg-gray-800 dark:text-white">
             <CardHeader>
               <CardTitle>Check Your Email</CardTitle>
-              <CardDescription>
+              <CardDescription className="dark:text-gray-300">
                 We've sent a confirmation link to your email. Please check your inbox and click the link to complete your registration.
               </CardDescription>
             </CardHeader>
@@ -169,7 +168,7 @@ const Login = () => {
             <CardFooter>
               <Button 
                 variant="outline" 
-                className="w-full" 
+                className="w-full dark:text-white dark:border-gray-600" 
                 onClick={() => {
                   setSignupComplete(false);
                 }}
@@ -184,25 +183,25 @@ const Login = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Navbar />
       <div className="pt-32 px-4 sm:px-6 lg:px-8 max-w-md mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Welcome to Synjoint</h1>
-          <p className="text-gray-600 mt-2">Sign in to access your account</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Welcome to Synjoint</h1>
+          <p className="text-gray-600 dark:text-gray-300 mt-2">Sign in to access your account</p>
         </div>
 
         <Tabs defaultValue="login" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="login">Login</TabsTrigger>
-            <TabsTrigger value="signup">Sign Up</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 mb-6 dark:bg-gray-700">
+            <TabsTrigger value="login" className="dark:data-[state=active]:bg-gray-600 dark:text-white">Login</TabsTrigger>
+            <TabsTrigger value="signup" className="dark:data-[state=active]:bg-gray-600 dark:text-white">Sign Up</TabsTrigger>
           </TabsList>
 
           <TabsContent value="login">
-            <Card>
+            <Card className="dark:bg-gray-800 dark:text-white dark:border-gray-700">
               <CardHeader>
                 <CardTitle>Login</CardTitle>
-                <CardDescription>Enter your credentials to access your account</CardDescription>
+                <CardDescription className="dark:text-gray-300">Enter your credentials to access your account</CardDescription>
               </CardHeader>
               <form onSubmit={handleLogin}>
                 <CardContent className="space-y-4">
@@ -213,7 +212,7 @@ const Login = () => {
                   )}
                   
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email" className="dark:text-white">Email</Label>
                     <Input
                       id="email"
                       type="email"
@@ -222,12 +221,13 @@ const Login = () => {
                       onChange={(e) => setLoginEmail(e.target.value)}
                       required
                       disabled={loginIsLoading}
+                      className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
                     />
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor="password">Password</Label>
-                      <Link to="/forgot-password" className="text-sm text-synjoint-blue hover:underline">
+                      <Label htmlFor="password" className="dark:text-white">Password</Label>
+                      <Link to="/forgot-password" className="text-sm text-synjoint-blue hover:underline dark:text-blue-400">
                         Forgot password?
                       </Link>
                     </div>
@@ -238,13 +238,14 @@ const Login = () => {
                       onChange={(e) => setLoginPassword(e.target.value)}
                       required
                       disabled={loginIsLoading}
+                      className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
                     />
                   </div>
                 </CardContent>
                 <CardFooter className="flex flex-col">
                   <Button 
                     type="submit" 
-                    className="w-full bg-synjoint-blue hover:bg-synjoint-blue/90" 
+                    className="w-full bg-synjoint-blue hover:bg-synjoint-blue/90 relative z-10"
                     disabled={loginIsLoading || authIsLoading}
                   >
                     {loginIsLoading ? (
@@ -257,10 +258,10 @@ const Login = () => {
 
                   <div className="relative mt-6 w-full">
                     <div className="absolute inset-0 flex items-center">
-                      <Separator className="w-full" />
+                      <Separator className="w-full dark:bg-gray-600" />
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+                      <span className="bg-card dark:bg-gray-800 px-2 text-muted-foreground dark:text-gray-400">Or continue with</span>
                     </div>
                   </div>
 
@@ -268,7 +269,7 @@ const Login = () => {
                     <Button 
                       type="button" 
                       variant="outline" 
-                      className="w-full" 
+                      className="w-full dark:text-white dark:border-gray-600" 
                       onClick={handleGoogleLogin} 
                       disabled={authIsLoading || loginIsLoading}
                     >
@@ -281,10 +282,10 @@ const Login = () => {
           </TabsContent>
 
           <TabsContent value="signup">
-            <Card>
+            <Card className="dark:bg-gray-800 dark:text-white dark:border-gray-700">
               <CardHeader>
                 <CardTitle>Create an Account</CardTitle>
-                <CardDescription>Fill in your details to create a new account</CardDescription>
+                <CardDescription className="dark:text-gray-300">Fill in your details to create a new account</CardDescription>
               </CardHeader>
               <form onSubmit={handleSignup}>
                 <CardContent className="space-y-4">
@@ -295,24 +296,56 @@ const Login = () => {
                   )}
                   
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input id="name" type="text" value={signupName} onChange={(e) => setSignupName(e.target.value)} required />
+                    <Label htmlFor="name" className="dark:text-white">Full Name</Label>
+                    <Input 
+                      id="name" 
+                      type="text" 
+                      value={signupName} 
+                      onChange={(e) => setSignupName(e.target.value)} 
+                      required 
+                      className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <Input id="signup-email" type="email" value={signupEmail} onChange={(e) => setSignupEmail(e.target.value)} required />
+                    <Label htmlFor="signup-email" className="dark:text-white">Email</Label>
+                    <Input 
+                      id="signup-email" 
+                      type="email" 
+                      value={signupEmail} 
+                      onChange={(e) => setSignupEmail(e.target.value)} 
+                      required 
+                      className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
-                    <Input id="signup-password" type="password" value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} required />
+                    <Label htmlFor="signup-password" className="dark:text-white">Password</Label>
+                    <Input 
+                      id="signup-password" 
+                      type="password" 
+                      value={signupPassword} 
+                      onChange={(e) => setSignupPassword(e.target.value)} 
+                      required 
+                      className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                    />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="confirm-password">Confirm Password</Label>
-                    <Input id="confirm-password" type="password" value={signupConfirmPassword} onChange={(e) => setSignupConfirmPassword(e.target.value)} required />
+                    <Label htmlFor="confirm-password" className="dark:text-white">Confirm Password</Label>
+                    <Input 
+                      id="confirm-password" 
+                      type="password" 
+                      value={signupConfirmPassword} 
+                      onChange={(e) => setSignupConfirmPassword(e.target.value)} 
+                      required 
+                      className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                    />
                   </div>
                 </CardContent>
                 <CardFooter className="flex flex-col">
-                  <Button type="submit" className="w-full bg-synjoint-blue hover:bg-synjoint-blue/90" disabled={signupIsLoading}>
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-synjoint-blue hover:bg-synjoint-blue/90 relative z-10" 
+                    disabled={signupIsLoading}
+                  >
                     {signupIsLoading ? "Creating Account..." : "Create Account"}
                   </Button>
                 </CardFooter>
@@ -321,7 +354,7 @@ const Login = () => {
           </TabsContent>
         </Tabs>
 
-        <div className="mt-6 text-center text-sm text-gray-500">
+        <div className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
           <p>
             Important: After signing up, you must confirm your email before you can log in.
             Check your inbox (and spam folder) for the confirmation email.

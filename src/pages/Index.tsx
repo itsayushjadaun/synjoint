@@ -94,14 +94,14 @@ const Index = () => {
               </section>
             </CarouselItem>
           </CarouselContent>
-          <div className="md:block">
-            <CarouselPrevious className="absolute left-4 z-10" />
-            <CarouselNext className="absolute right-4 z-10" />
+          <div className="md:block fixed z-10">
+            <CarouselPrevious className="absolute left-4 top-1/2 bg-white/50 dark:bg-gray-800/50 hover:bg-white/80 dark:hover:bg-gray-800/80" />
+            <CarouselNext className="absolute right-4 top-1/2 bg-white/50 dark:bg-gray-800/50 hover:bg-white/80 dark:hover:bg-gray-800/80" />
           </div>
         </Carousel>
       </div>
 
-      <div className="mt-10">
+      <div>
         <Certifications />
         <News />
         <Testimonials />

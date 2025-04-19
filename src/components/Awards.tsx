@@ -27,7 +27,7 @@ const Awards = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-synjoint-blue to-blue-800 text-white flex items-center">
+    <div className="min-h-screen bg-gradient-to-r from-synjoint-blue to-blue-800 text-white flex items-center dark:from-blue-900 dark:to-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
