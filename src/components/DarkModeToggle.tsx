@@ -1,56 +1,42 @@
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from '../context/AuthContext';
 
 const DarkModeToggle = () => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const { darkMode, toggleDarkMode } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if user previously set a preference
-    const savedTheme = localStorage.getItem('theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
-    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-      setIsDarkMode(true);
+    // Set the dark mode class based on the context
+    if (darkMode) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
-  }, []);
+  }, [darkMode]);
 
-  const toggleDarkMode = () => {
-    if (isDarkMode) {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-      toast({
-        title: "Light mode activated",
-        description: "The application is now in light mode",
-        duration: 2000
-      });
-    } else {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-      toast({
-        title: "Dark mode activated",
-        description: "The application is now in dark mode",
-        duration: 2000
-      });
-    }
-    setIsDarkMode(!isDarkMode);
+  const handleToggleDarkMode = () => {
+    toggleDarkMode();
+    
+    toast({
+      title: darkMode ? "Light mode activated" : "Dark mode activated",
+      description: `The application is now in ${darkMode ? "light" : "dark"} mode`,
+      duration: 2000
+    });
   };
 
   return (
     <Button
       variant="ghost"
       size="sm"
-      onClick={toggleDarkMode}
+      onClick={handleToggleDarkMode}
       className="w-9 px-0"
       aria-label="Toggle dark mode"
     >
-      {isDarkMode ? <Sun className="h-5 w-5 text-yellow-400" /> : <Moon className="h-5 w-5" />}
+      {darkMode ? <Sun className="h-5 w-5 text-yellow-400" /> : <Moon className="h-5 w-5" />}
     </Button>
   );
 };
