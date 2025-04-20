@@ -1,12 +1,24 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { BlogPost } from "@/utils/db";
 import { toast } from "sonner";
 import { useAuth } from "../context/AuthContext";
+
+const searchMapping = {
+  product: '/products',
+  products: '/products',
+  about: '/about',
+  contact: '/contact',
+  careers: '/careers',
+  career: '/careers',
+  academy: '/academy',
+  blog: '/blogs',
+  blogs: '/blogs',
+  innovation: '/innovation',
+  home: '/',
+};
 
 const SearchBar = () => {
   const [query, setQuery] = useState("");
@@ -24,10 +36,22 @@ const SearchBar = () => {
     }
 
     const searchQuery = query.toLowerCase();
-    const filteredResults = blogs.filter((blog) => 
+
+    const directMatch = Object.entries(searchMapping).find(([key]) => 
+      key.includes(searchQuery) || searchQuery.includes(key)
+    );
+
+    if (directMatch) {
+      navigate(directMatch[1]);
+      setShowResults(false);
+      setQuery("");
+      return;
+    }
+
+    const filteredResults = blogs?.filter((blog) => 
       blog.title.toLowerCase().includes(searchQuery) || 
       blog.content.toLowerCase().includes(searchQuery)
-    );
+    ) || [];
 
     setResults(filteredResults);
     setShowResults(true);
@@ -42,7 +66,6 @@ const SearchBar = () => {
     navigate(`/blog/${id}`);
   };
 
-  // Close results when clicking outside
   useEffect(() => {
     const handleClickOutside = () => setShowResults(false);
     document.addEventListener("click", handleClickOutside);
@@ -55,7 +78,7 @@ const SearchBar = () => {
         <div className="relative flex-grow">
           <Input
             type="text"
-            placeholder="Search blogs..."
+            placeholder="Search pages or blogs..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="pr-10 dark:bg-gray-800 dark:text-white dark:border-gray-700"
