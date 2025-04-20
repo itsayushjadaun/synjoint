@@ -1,17 +1,37 @@
-
 import { motion } from "framer-motion";
 import { ArrowDown } from "lucide-react";
 
 const Hero = () => {
   return (
     <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-r from-synjoint-darkblue to-synjoint-blue">
+      {/* Video Background */}
+      <div className="absolute inset-0 w-full h-full">
+        <div className="absolute inset-0 bg-black/40 z-10"></div>
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="w-full h-full object-cover"
+          poster="/lovable-uploads/274c7dca-7bb5-45ca-84ae-807b8a8c3f00.png"
+        >
+          <source src="https://cdn.synjoint.com/hero-bg.mp4" type="video/mp4" />
+          {/* Fallback image */}
+          <img
+            src="/lovable-uploads/274c7dca-7bb5-45ca-84ae-807b8a8c3f00.png"
+            alt="SYNJOINT Hero Background"
+            className="w-full h-full object-cover"
+          />
+        </video>
+      </div>
+
       {/* Background pattern */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden z-20">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px)] bg-[size:40px] bg-[position:top_center] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000000_70%,transparent_100%)]"></div>
       </div>
       
       {/* Animated dots */}
-      <div className="absolute w-full h-full">
+      <div className="absolute w-full h-full z-20">
         {[...Array(20)].map((_, i) => (
           <motion.div
             key={i}
@@ -33,7 +53,7 @@ const Hero = () => {
         ))}
       </div>
       
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 z-30">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           {/* Left Column - Text Content */}
           <motion.div
@@ -113,7 +133,7 @@ const Hero = () => {
               duration: 1.5
             }
           }}
-          className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex flex-col items-center text-white/80 hover:text-white transition-colors"
+          className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex flex-col items-center text-white/80 hover:text-white transition-colors z-30"
         >
           <span className="text-sm mb-2">Scroll Down</span>
           <ArrowDown className="h-5 w-5" />

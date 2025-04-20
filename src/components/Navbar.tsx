@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X, Search, User, LogOut, FileText, Briefcase, ChevronDown } from "lucide-react";
@@ -33,7 +32,6 @@ const Navbar = () => {
   }, []);
 
   useEffect(() => {
-    // Close mobile menu when user clicks outside
     const handleOutsideClick = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsMobileMenuOpen(false);
@@ -166,7 +164,7 @@ const Navbar = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
         className={`w-full transition-all duration-300 ${
-          isScrolled ? "bg-white shadow-md dark:bg-gray-800 dark:shadow-gray-900/30" : "bg-white dark:bg-gray-800"
+          isScrolled ? "bg-white/95 shadow-md backdrop-blur-sm dark:bg-gray-800/95" : "bg-white dark:bg-gray-800"
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -174,9 +172,9 @@ const Navbar = () => {
             <div className="flex-shrink-0">
               <Link to="/" className="flex items-center">
                 <img
-                  src="/lovable-uploads/fa6d2119-286c-498d-b934-ec9619932a0c.png"
+                  src="/lovable-uploads/42e5c406-c944-44ff-a66f-ac4c21c5a3e1.png"
                   alt="Synjoint Logo"
-                  className="h-12 w-auto"
+                  className="h-12 w-auto dark:brightness-125"
                 />
               </Link>
             </div>
