@@ -1,5 +1,6 @@
 
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 
 const CallToAction = () => {
   return (
@@ -16,18 +17,18 @@ const CallToAction = () => {
             Join us in our mission to advance medical technology and improve patient care worldwide.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="/contact"
+            <Link
+              to="/contact"
               className="inline-flex items-center justify-center px-8 py-3 border-2 border-white text-base font-medium rounded-md text-white hover:bg-white hover:text-synjoint-blue transition-colors duration-200"
             >
               Contact Us
-            </a>
-            <a
-              href="/products"
+            </Link>
+            <Link
+              to="/products"
               className="inline-flex items-center justify-center px-8 py-3 border-2 border-synjoint-orange bg-synjoint-orange text-base font-medium rounded-md text-white hover:bg-synjoint-orange/90 hover:border-synjoint-orange/90 transition-colors duration-200"
             >
               Explore Products
-            </a>
+            </Link>
           </div>
         </motion.div>
       </div>

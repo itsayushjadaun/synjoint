@@ -39,8 +39,8 @@ const DarkModeToggle = () => {
       variant="ghost"
       size="sm"
       onClick={handleToggleDarkMode}
-      className="w-9 px-0 hover:bg-transparent dark:hover:bg-transparent relative"
-      style={{ zIndex: 10 }}
+      className="w-9 px-0 hover:bg-transparent dark:hover:bg-transparent"
+      style={{ zIndex: 10, position: 'relative' }}
       aria-label="Toggle dark mode"
     >
       <div className="relative w-6 h-6">

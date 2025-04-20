@@ -5,6 +5,12 @@ import { Mail, Phone, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL || '',
+  import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+);
 
 const ContactSection = () => {
   const [formData, setFormData] = useState({
@@ -21,25 +27,51 @@ const ContactSection = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!formData.name || !formData.email || !formData.message) {
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      // Call the Supabase Edge Function
+      const { data, error } = await supabase.functions.invoke('send-contact-email', {
+        body: JSON.stringify(formData)
+      });
+      
+      if (error) throw error;
+      
       toast({
         title: "Message sent",
         description: "We'll get back to you as soon as possible.",
         duration: 5000
       });
+      
+      // Reset form
       setFormData({
         name: "",
         email: "",
         phone: "",
         message: ""
       });
+    } catch (error) {
+      console.error("Error submitting contact form:", error);
+      toast({
+        title: "Failed to send message",
+        description: error.message || "Please try again later",
+        variant: "destructive"
+      });
+    } finally {
       setIsSubmitting(false);
-    }, 1500);
+    }
   };
 
   const contactInfo = [
@@ -140,7 +172,7 @@ const ContactSection = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Your Name
+                      Your Name <span className="text-red-500">*</span>
                     </label>
                     <Input
                       id="name"
@@ -155,7 +187,7 @@ const ContactSection = () => {
                   </div>
                   <div>
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Email Address
+                      Email Address <span className="text-red-500">*</span>
                     </label>
                     <Input
                       id="email"
@@ -187,7 +219,7 @@ const ContactSection = () => {
                 
                 <div>
                   <label htmlFor="message" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Your Message
+                    Your Message <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     id="message"
@@ -197,7 +229,7 @@ const ContactSection = () => {
                     value={formData.message}
                     onChange={handleChange}
                     placeholder="How can we help you?"
-                    className="form-input"
+                    className="form-input w-full rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white py-2 px-3"
                   />
                 </div>
                 
@@ -207,7 +239,12 @@ const ContactSection = () => {
                     disabled={isSubmitting}
                     className="w-full bg-synjoint-blue hover:bg-synjoint-darkblue text-white font-medium py-3 rounded-md transition-colors shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-synjoint-blue"
                   >
-                    {isSubmitting ? "Sending..." : "Send Message"}
+                    {isSubmitting ? (
+                      <div className="flex items-center justify-center">
+                        <div className="animate-spin mr-2 h-4 w-4 border-b-2 rounded-full border-white"></div>
+                        <span>Sending...</span>
+                      </div>
+                    ) : "Send Message"}
                   </Button>
                 </div>
               </form>

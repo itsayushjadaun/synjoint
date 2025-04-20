@@ -33,6 +33,28 @@ const Index = () => {
         }
       });
     });
+    
+    // Handle special link functionality for Explore and Contact
+    const exploreButton = document.getElementById('explore-button');
+    const contactButton = document.getElementById('contact-button');
+    
+    if (exploreButton) {
+      exploreButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.getElementById('products')?.scrollIntoView({
+          behavior: 'smooth'
+        });
+      });
+    }
+    
+    if (contactButton) {
+      contactButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        document.getElementById('contact')?.scrollIntoView({
+          behavior: 'smooth'
+        });
+      });
+    }
   }, []);
 
   return (
@@ -40,8 +62,82 @@ const Index = () => {
       <Navbar />
       
       <div className="w-full">
-        {/* Hero Section with Scroll Indicator */}
-        <section id="hero">
+        {/* Hero Section with Animation Background */}
+        <section id="hero" className="relative">
+          <div className="absolute inset-0 overflow-hidden">
+            <motion.div 
+              className="absolute inset-0 bg-gradient-to-r from-synjoint-blue/20 to-synjoint-blue/5 dark:from-synjoint-darkblue/40 dark:to-synjoint-darkblue/20"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 1.5 }}
+            />
+            
+            {/* Animated medical elements */}
+            <div className="absolute inset-0">
+              <motion.div
+                className="absolute w-40 h-40 rounded-full bg-synjoint-blue/10 dark:bg-synjoint-blue/5"
+                style={{ top: '10%', left: '5%' }}
+                animate={{
+                  scale: [1, 1.2, 1],
+                  opacity: [0.3, 0.5, 0.3],
+                }}
+                transition={{
+                  duration: 8,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              />
+              <motion.div
+                className="absolute w-64 h-64 rounded-full bg-synjoint-orange/10 dark:bg-synjoint-orange/5"
+                style={{ top: '30%', right: '10%' }}
+                animate={{
+                  scale: [1, 1.1, 1],
+                  opacity: [0.2, 0.4, 0.2],
+                }}
+                transition={{
+                  duration: 10,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 1
+                }}
+              />
+              <motion.div
+                className="absolute w-32 h-32 rounded-full bg-blue-400/10 dark:bg-blue-400/5"
+                style={{ bottom: '15%', left: '15%' }}
+                animate={{
+                  scale: [1, 1.3, 1],
+                  opacity: [0.2, 0.3, 0.2],
+                }}
+                transition={{
+                  duration: 7,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                  delay: 2
+                }}
+              />
+              
+              {/* DNA helix animation */}
+              <div className="absolute right-[5%] top-[20%] h-64 w-16 opacity-20 dark:opacity-15">
+                {Array.from({ length: 10 }).map((_, i) => (
+                  <motion.div
+                    key={`dna-${i}`}
+                    className="absolute h-2 w-2 bg-synjoint-blue rounded-full"
+                    style={{ top: `${i * 10}%` }}
+                    animate={{
+                      x: [0, 20, 0, -20, 0],
+                    }}
+                    transition={{
+                      duration: 3,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      delay: i * 0.3
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+          
           <Hero />
         </section>
         
@@ -68,16 +164,36 @@ const Index = () => {
         
         {/* Main Content */}
         <div ref={sectionsRef}>
-          <About />
-          <Statistics />
-          <ProductShowcase />
-          <StakeholdersSection />
-          <Features />
-          <Testimonials />
-          <Certifications />
-          <ContactSection />
-          <News />
-          <CallToAction />
+          <section id="about">
+            <About />
+          </section>
+          <section id="statistics">
+            <Statistics />
+          </section>
+          <section id="products">
+            <ProductShowcase />
+          </section>
+          <section id="stakeholders">
+            <StakeholdersSection />
+          </section>
+          <section id="features">
+            <Features />
+          </section>
+          <section id="testimonials">
+            <Testimonials />
+          </section>
+          <section id="certifications">
+            <Certifications />
+          </section>
+          <section id="contact">
+            <ContactSection />
+          </section>
+          <section id="news">
+            <News />
+          </section>
+          <section id="cta">
+            <CallToAction />
+          </section>
         </div>
       </div>
       

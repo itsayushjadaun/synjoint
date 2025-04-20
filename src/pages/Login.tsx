@@ -20,7 +20,8 @@ const Login = () => {
   useEffect(() => {
     if (user) {
       console.log("User is already logged in, redirecting to home page", user);
-      navigate("/"); // Redirect to home page if logged in
+      const redirectUrl = user.role === 'admin' ? '/admin' : '/';
+      navigate(redirectUrl); // Redirect based on role
     }
   }, [user, navigate]);
 
@@ -82,7 +83,15 @@ const Login = () => {
       // If login is successful, user state will be updated and the useEffect will redirect
     } catch (error: any) {
       console.error("Login error:", error);
-      const errorMessage = error.message || "Invalid credentials. Please try again.";
+      let errorMessage = error.message || "Invalid credentials. Please try again.";
+      
+      // Check for email not confirmed error
+      if (errorMessage.includes("Email not confirmed") || 
+          errorMessage.includes("not confirmed") || 
+          errorMessage.includes("verification")) {
+        errorMessage = "Please check your email and confirm your account before logging in.";
+      }
+      
       setLoginError(errorMessage);
       toast.error(errorMessage);
       
@@ -251,9 +260,8 @@ const Login = () => {
                 <CardFooter className="flex flex-col">
                   <Button 
                     type="submit" 
-                    className="w-full bg-synjoint-blue hover:bg-synjoint-blue/90 dark:bg-blue-600 dark:hover:bg-blue-700"
+                    className="w-full bg-synjoint-blue hover:bg-synjoint-blue/90 dark:bg-blue-600 dark:hover:bg-blue-700 relative z-50"
                     disabled={loginIsLoading || authIsLoading}
-                    style={{ position: 'relative', zIndex: 50 }}
                   >
                     {loginIsLoading ? (
                       <div className="flex items-center">
@@ -276,10 +284,9 @@ const Login = () => {
                     <Button 
                       type="button" 
                       variant="outline" 
-                      className="w-full dark:text-white dark:border-gray-600" 
+                      className="w-full dark:text-white dark:border-gray-600 relative z-50" 
                       onClick={handleGoogleLogin} 
                       disabled={authIsLoading || loginIsLoading}
-                      style={{ position: 'relative', zIndex: 50 }}
                     >
                       Sign in with Google
                     </Button>
@@ -351,9 +358,8 @@ const Login = () => {
                 <CardFooter className="flex flex-col">
                   <Button 
                     type="submit" 
-                    className="w-full bg-synjoint-blue hover:bg-synjoint-blue/90 dark:bg-blue-600 dark:hover:bg-blue-700" 
+                    className="w-full bg-synjoint-blue hover:bg-synjoint-blue/90 dark:bg-blue-600 dark:hover:bg-blue-700 relative z-50" 
                     disabled={signupIsLoading}
-                    style={{ position: 'relative', zIndex: 50 }}
                   >
                     {signupIsLoading ? "Creating Account..." : "Create Account"}
                   </Button>
