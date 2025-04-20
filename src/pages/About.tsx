@@ -1,68 +1,55 @@
 
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import Navbar from "../components/Navbar";
+import About from "../components/About";
+import Footer from "../components/Footer";
+import StakeholdersSection from "../components/StakeholdersSection";
 
-const About = () => {
+const AboutPage = () => {
+  useEffect(() => {
+    // Update document title and meta description for SEO
+    document.title = "About SYNJOINT | Leading Orthopedic Implant Solutions";
+    
+    // Update meta description
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription) {
+      metaDescription.setAttribute(
+        "content", 
+        "SYNJOINT Tech Pvt Ltd is a leading innovator in orthopedic implants and medical devices, specializing in hip and knee joint arthroplasty systems."
+      );
+    }
+    
+    // Scroll to top on page load
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-gray-900">
       <Navbar />
-      <div className="pt-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="py-12"
-        >
-          <h1 className="text-4xl font-bold text-gray-900 mb-8">About Synjoint Techno</h1>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-semibold text-synjoint-blue mb-4">Company Overview</h2>
-                <p className="text-gray-600">
-                  SYNJOINT TECHNO PRIVATE LIMITED (CIN: U33115RJ2020PTC068479) is a Private company
-                  incorporated on 06 Dec 2020. We specialize in the manufacture of medical and surgical
-                  equipment and orthopedic appliances.
-                </p>
-              </div>
-              
-              <div>
-                <h2 className="text-2xl font-semibold text-synjoint-blue mb-4">Leadership</h2>
-                <p className="text-gray-600">
-                  Our company is led by our esteemed directors:
-                </p>
-                <ul className="list-disc list-inside mt-2 text-gray-600">
-                  <li>Dr. SUSHEEL CHAUDHARY</li>
-                  <li>SANGEETA LAMBA</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-semibold text-synjoint-blue mb-4">Company Details</h2>
-                <ul className="space-y-2 text-gray-600">
-                  <li><strong>Registration Number:</strong> 68479</li>
-                  <li><strong>Company Category:</strong> Company limited by shares</li>
-                  <li><strong>Company Status:</strong> Active</li>
-                  <li><strong>Date of Incorporation:</strong> 2020-03-06</li>
-                </ul>
-              </div>
-              
-              <div>
-                <h2 className="text-2xl font-semibold text-synjoint-blue mb-4">Contact Information</h2>
-                <address className="text-gray-600 not-italic">
-                  <p>E-56, BALDEO NAGAR, MAKARWALI ROAD</p>
-                  <p>AJMER, Rajasthan, India - 305001</p>
-                  <p className="mt-2">Email: drsusheel.chaudhary@yahoo.co.in</p>
-                </address>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      </div>
+      
+      <section className="pt-32 pb-16 bg-gradient-to-r from-synjoint-darkblue to-synjoint-blue text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7 }}
+            className="text-center"
+          >
+            <h1 className="text-4xl md:text-5xl font-bold mb-6">About SYNJOINT</h1>
+            <p className="text-xl text-white/90 max-w-3xl mx-auto">
+              Leading innovator in orthopedic implants and medical devices, committed to improving patient outcomes
+            </p>
+          </motion.div>
+        </div>
+      </section>
+      
+      <About />
+      <StakeholdersSection />
+      
+      <Footer />
     </div>
   );
 };
 
-export default About;
+export default AboutPage;

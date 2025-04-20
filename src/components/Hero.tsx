@@ -1,11 +1,36 @@
 
 import { motion } from "framer-motion";
+import { ArrowDown } from "lucide-react";
 
 const Hero = () => {
   return (
-    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-r from-blue-700 to-blue-500">
+    <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-r from-synjoint-darkblue to-synjoint-blue">
+      {/* Background pattern */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px)] bg-[size:40px] bg-[position:top_center] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000000_70%,transparent_100%)]"></div>
+      </div>
+      
+      {/* Animated dots */}
+      <div className="absolute w-full h-full">
+        {[...Array(20)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute w-2 h-2 rounded-full bg-white/30"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+            }}
+            animate={{
+              opacity: [0.2, 0.5, 0.2],
+              scale: [1, 1.5, 1],
+            }}
+            transition={{
+              duration: 4,
+              repeat: Infinity,
+              delay: Math.random() * 5,
+            }}
+          />
+        ))}
       </div>
       
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20">
@@ -14,64 +39,85 @@ const Hero = () => {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.7 }}
             className="text-white"
           >
-            <h1 className="text-5xl font-bold mb-4">
-              Synjoint,
+            <h4 className="text-lg md:text-xl mb-3 font-light text-white/80">Welcome to SYNJOINT</h4>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
+              Advanced Orthopedic
               <br />
-              The Most
-              <br />
-              <span className="text-6xl">Preferred</span>
-              <br />
-              Workplace!
+              <span className="text-synjoint-orange">Implant Solutions</span>
             </h1>
-            <p className="text-2xl mb-8">2024-25</p>
-            <div className="flex items-center space-x-2">
-              <span className="text-xl">Recognised by</span>
-              <span className="text-2xl font-bold">MARKSMEN DAILY</span>
+            <p className="text-lg md:text-xl mb-8 text-white/90 max-w-xl">
+              Leading innovator in medical devices & orthopedic solutions - specializing in hip and knee joint arthroplasty systems.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4 mb-12">
+              <a href="/products" className="btn-accent">
+                Explore Products
+              </a>
+              <a href="/contact" className="btn-secondary bg-white/10 backdrop-blur-sm border-white/30 text-white hover:bg-white/20">
+                Contact Us
+              </a>
             </div>
             
-            {/* Slider dots */}
-            <div className="flex space-x-2 mt-8">
-              {[...Array(7)].map((_, i) => (
-                <div
-                  key={i}
-                  className={`h-2 w-2 rounded-full ${
-                    i === 1 ? "bg-synjoint-orange" : "bg-white/50"
-                  }`}
-                ></div>
-              ))}
+            <div className="flex items-center space-x-4">
+              <div className="flex flex-col">
+                <span className="text-xl font-semibold">Certified</span>
+                <span className="text-white/70">ISO 13485:2016</span>
+              </div>
+              <div className="h-8 w-px bg-white/30"></div>
+              <div className="flex flex-col">
+                <span className="text-xl font-semibold">5+ Years</span>
+                <span className="text-white/70">Experience</span>
+              </div>
+              <div className="h-8 w-px bg-white/30"></div>
+              <div className="flex flex-col">
+                <span className="text-xl font-semibold">100+</span>
+                <span className="text-white/70">Clients</span>
+              </div>
             </div>
           </motion.div>
 
-          {/* Right Column - Awards */}
+          {/* Right Column - Image */}
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5 }}
-            className="relative"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.2 }}
+            className="relative rounded-2xl overflow-hidden shadow-2xl border border-white/10"
           >
             <img
               src="/lovable-uploads/274c7dca-7bb5-45ca-84ae-807b8a8c3f00.png"
-              alt="Awards and Recognition"
-              className="w-full"
+              alt="Orthopedic Implants"
+              className="w-full rounded-2xl"
             />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+            <div className="absolute bottom-0 left-0 p-6">
+              <span className="text-sm uppercase tracking-wider text-white/80">Trusted by</span>
+              <h3 className="text-2xl text-white font-bold">Leading Healthcare Providers</h3>
+            </div>
           </motion.div>
         </div>
 
-        {/* Enquire Now Button */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
+        {/* Scroll Down Indicator */}
+        <motion.a
+          href="#about"
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="absolute top-4 right-4"
+          transition={{ 
+            duration: 0.7, 
+            delay: 0.8,
+            y: {
+              repeat: Infinity,
+              repeatType: "reverse",
+              duration: 1.5
+            }
+          }}
+          className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex flex-col items-center text-white/80 hover:text-white transition-colors"
         >
-          <button className="bg-synjoint-orange text-white px-6 py-2 rounded-md hover:bg-synjoint-orange/90 transition-colors duration-200 flex items-center space-x-2">
-            <span className="text-sm font-medium">ENQUIRE</span>
-            <span className="text-sm font-medium">NOW</span>
-          </button>
-        </motion.div>
+          <span className="text-sm mb-2">Scroll Down</span>
+          <ArrowDown className="h-5 w-5" />
+        </motion.a>
       </div>
     </div>
   );

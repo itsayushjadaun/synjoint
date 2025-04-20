@@ -32,14 +32,50 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
 const App = () => {
   useEffect(() => {
     // Apply saved theme on initial load
-    const savedTheme = localStorage.getItem('theme');
+    const savedTheme = localStorage.getItem('darkMode');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     
-    if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+    if (savedTheme === 'true' || (!savedTheme && prefersDark)) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
+    
+    // Set theme color meta tag based on current mode
+    const setThemeColor = () => {
+      const isDark = document.documentElement.classList.contains('dark');
+      const metaThemeColor = document.querySelector('meta[name=theme-color]');
+      
+      if (metaThemeColor) {
+        metaThemeColor.setAttribute('content', isDark ? '#0f172a' : '#ffffff');
+      } else {
+        const meta = document.createElement('meta');
+        meta.name = 'theme-color';
+        meta.content = isDark ? '#0f172a' : '#ffffff';
+        document.head.appendChild(meta);
+      }
+    };
+    
+    setThemeColor();
+    
+    // Listen for theme changes
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (
+          mutation.type === 'attributes' && 
+          mutation.attributeName === 'class' &&
+          mutation.target === document.documentElement
+        ) {
+          setThemeColor();
+        }
+      });
+    });
+    
+    observer.observe(document.documentElement, { attributes: true });
+    
+    return () => {
+      observer.disconnect();
+    };
   }, []);
 
   return (

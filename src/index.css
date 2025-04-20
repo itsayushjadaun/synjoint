@@ -5,7 +5,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 210 40% 98%;
     --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
@@ -14,7 +14,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 210 64% 31%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -23,7 +23,7 @@
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 210 40% 96.1%;
+    --accent: 210 50% 90%;
     --accent-foreground: 222.2 47.4% 11.2%;
 
     --destructive: 0 84.2% 60.2%;
@@ -46,7 +46,7 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
+    --primary: 210 40% 60%;
     --primary-foreground: 222.2 47.4% 11.2%;
 
     --secondary: 217.2 32.6% 17.5%;
@@ -55,7 +55,7 @@
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 217.2 32.6% 17.5%;
+    --accent: 217.2 32.6% 25%;
     --accent-foreground: 210 40% 98%;
 
     --destructive: 0 62.8% 30.6%;
@@ -87,6 +87,34 @@
   .dark a:not(.btn) {
     @apply text-blue-400 hover:text-blue-300;
   }
+
+  /* Custom button styles */
+  .btn-primary {
+    @apply px-6 py-3 bg-synjoint-blue text-white rounded-md transition-all duration-300 
+    hover:bg-synjoint-darkblue hover:shadow-md active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 bg-white border border-synjoint-blue text-synjoint-blue rounded-md 
+    transition-all duration-300 hover:bg-synjoint-lightgray hover:shadow-sm active:scale-95;
+  }
+
+  .btn-accent {
+    @apply px-6 py-3 bg-synjoint-orange text-white rounded-md transition-all duration-300 
+    hover:brightness-105 hover:shadow-md active:scale-95;
+  }
+
+  /* Form input styles */
+  .form-input {
+    @apply w-full px-4 py-3 border border-gray-300 rounded-md transition-all duration-200 
+    focus:border-synjoint-blue focus:ring-1 focus:ring-synjoint-blue focus:outline-none
+    dark:bg-gray-800 dark:border-gray-700 dark:focus:border-blue-500;
+  }
+
+  /* Card styles */
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+  }
 }
 
 /* Ensure dark mode persistence */
@@ -101,7 +129,7 @@ html.dark {
 
 /* Add smooth transitions for dark mode changes */
 *, *::before, *::after {
-  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 /* Smooth scrolling */
@@ -130,6 +158,15 @@ html {
   background-color: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Glassmorphism */
+.glass {
+  @apply bg-white/10 backdrop-blur-lg border border-white/20 rounded-lg;
+}
+
+.dark .glass {
+  @apply bg-black/20 backdrop-blur-lg border border-white/10 rounded-lg;
 }
 
 /* Dark mode specific component styles */
@@ -182,4 +219,36 @@ html {
   opacity: 0;
   transform: translateY(20px);
   transition: opacity 400ms, transform 400ms;
+}
+
+/* Interactive hover effects */
+.hover-scale {
+  @apply transition-transform duration-300;
+}
+.hover-scale:hover {
+  transform: scale(1.05);
+}
+
+.hover-lift {
+  @apply transition-all duration-300;
+}
+.hover-lift:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Link underline animation */
+.animate-link {
+  @apply relative inline-block;
+}
+.animate-link::after {
+  content: '';
+  @apply absolute w-full h-0.5 bg-synjoint-blue left-0 bottom-0 transform scale-x-0 origin-bottom-right transition-transform duration-300;
+}
+.animate-link:hover::after {
+  @apply scale-x-100 origin-bottom-left;
+}
+
+.dark .animate-link::after {
+  @apply bg-blue-400;
 }

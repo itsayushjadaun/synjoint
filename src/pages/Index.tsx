@@ -1,28 +1,24 @@
 
 import { useEffect, useRef } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
 import Statistics from "../components/Statistics";
 import Features from "../components/Features";
-import Mission from "../components/Mission";
-import ProductsPreview from "../components/ProductsPreview";
+import About from "../components/About";
+import ProductShowcase from "../components/ProductShowcase";
 import Testimonials from "../components/Testimonials";
 import News from "../components/News";
 import Certifications from "../components/Certifications";
 import CallToAction from "../components/CallToAction";
-import { 
-  Carousel, 
-  CarouselContent, 
-  CarouselItem, 
-  CarouselNext, 
-  CarouselPrevious 
-} from "@/components/ui/carousel";
-import Awards from "../components/Awards";
-import Events from "../components/Events";
-import Partnerships from "../components/Partnerships";
+import StakeholdersSection from "../components/StakeholdersSection";
+import ContactSection from "../components/ContactSection";
+import Footer from "../components/Footer";
 
 const Index = () => {
   const sectionsRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll();
+  const opacity = useTransform(scrollYProgress, [0, 0.05], [1, 0]);
 
   useEffect(() => {
     // Smooth scroll behavior for anchor links
@@ -43,70 +39,49 @@ const Index = () => {
     <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-300">
       <Navbar />
       
-      <div ref={sectionsRef} className="w-full">
-        <Carousel className="w-full">
-          <CarouselContent>
-            <CarouselItem>
-              <section id="hero" className="w-full">
-                <Hero />
-              </section>
-            </CarouselItem>
-            
-            <CarouselItem>
-              <section id="mission" className="w-full">
-                <Mission />
-              </section>
-            </CarouselItem>
-            
-            <CarouselItem>
-              <section id="statistics" className="w-full">
-                <Statistics />
-              </section>
-            </CarouselItem>
-            
-            <CarouselItem>
-              <section id="features" className="w-full">
-                <Features />
-              </section>
-            </CarouselItem>
-            
-            <CarouselItem>
-              <section id="products" className="w-full">
-                <ProductsPreview />
-              </section>
-            </CarouselItem>
-            
-            <CarouselItem>
-              <section id="awards" className="w-full">
-                <Awards />
-              </section>
-            </CarouselItem>
-            
-            <CarouselItem>
-              <section id="events" className="w-full">
-                <Events />
-              </section>
-            </CarouselItem>
-            
-            <CarouselItem>
-              <section id="partnerships" className="w-full">
-                <Partnerships />
-              </section>
-            </CarouselItem>
-          </CarouselContent>
-          <div className="md:block fixed z-10">
-            <CarouselPrevious className="absolute left-4 top-1/2 bg-white/50 dark:bg-gray-800/50 hover:bg-white/80 dark:hover:bg-gray-800/80" />
-            <CarouselNext className="absolute right-4 top-1/2 bg-white/50 dark:bg-gray-800/50 hover:bg-white/80 dark:hover:bg-gray-800/80" />
+      <div className="w-full">
+        {/* Hero Section with Scroll Indicator */}
+        <section id="hero">
+          <Hero />
+        </section>
+        
+        {/* Scroll Indicator */}
+        <motion.div
+          className="fixed bottom-5 right-5 z-40 flex flex-col items-center"
+          style={{ opacity }}
+        >
+          <span className="text-xs text-gray-600 dark:text-gray-400 mb-1">Scroll</span>
+          <div className="w-6 h-10 border-2 border-gray-600 dark:border-gray-400 rounded-full flex justify-center">
+            <motion.div
+              className="w-1.5 h-1.5 bg-gray-600 dark:bg-gray-400 rounded-full mt-2"
+              animate={{
+                y: [0, 8, 0],
+              }}
+              transition={{
+                duration: 1.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+            />
           </div>
-        </Carousel>
+        </motion.div>
+        
+        {/* Main Content */}
+        <div ref={sectionsRef}>
+          <About />
+          <Statistics />
+          <ProductShowcase />
+          <StakeholdersSection />
+          <Features />
+          <Testimonials />
+          <Certifications />
+          <ContactSection />
+          <News />
+          <CallToAction />
+        </div>
       </div>
-
-      <div>
-        <Certifications />
-        <News />
-        <Testimonials />
-        <CallToAction />
-      </div>
+      
+      <Footer />
     </div>
   );
 };

@@ -3,12 +3,14 @@ import { useEffect, useState } from 'react';
 import { Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from "@/components/ui/use-toast";
+import { motion } from "framer-motion";
 
 const DarkModeToggle = () => {
   const [darkMode, setDarkMode] = useState(() => {
     // Get from localStorage or default to false
     const saved = localStorage.getItem('darkMode');
-    return saved === 'true' ? true : false;
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return saved === 'true' ? true : saved === 'false' ? false : prefersDark;
   });
   const { toast } = useToast();
 
@@ -37,11 +39,29 @@ const DarkModeToggle = () => {
       variant="ghost"
       size="sm"
       onClick={handleToggleDarkMode}
-      className="w-9 px-0"
-      style={{ position: 'relative', zIndex: 10 }}
+      className="w-9 px-0 hover:bg-transparent dark:hover:bg-transparent relative"
+      style={{ zIndex: 10 }}
       aria-label="Toggle dark mode"
     >
-      {darkMode ? <Sun className="h-5 w-5 text-yellow-400" /> : <Moon className="h-5 w-5" />}
+      <div className="relative w-6 h-6">
+        {darkMode ? (
+          <motion.div
+            initial={{ scale: 0.5, opacity: 0, rotate: -90 }}
+            animate={{ scale: 1, opacity: 1, rotate: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Sun className="h-5 w-5 text-yellow-400" />
+          </motion.div>
+        ) : (
+          <motion.div
+            initial={{ scale: 0.5, opacity: 0, rotate: 90 }}
+            animate={{ scale: 1, opacity: 1, rotate: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Moon className="h-5 w-5" />
+          </motion.div>
+        )}
+      </div>
     </Button>
   );
 };
