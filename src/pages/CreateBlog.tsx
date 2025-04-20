@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { Upload, X } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 const CreateBlog = () => {
   const { user, addBlog } = useAuth();
@@ -16,8 +18,10 @@ const CreateBlog = () => {
   
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [imageUrl, setImageUrl] = useState("/lovable-uploads/cef8ce24-f36c-4060-8c3e-41ce14874770.png");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   
   useEffect(() => {
     // Redirect if not admin
@@ -25,6 +29,71 @@ const CreateBlog = () => {
       navigate('/');
     }
   }, [user, navigate]);
+  
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+      toast.error("Please upload a valid image file (JPG, PNG, WebP, or GIF)");
+      return;
+    }
+    
+    // Validate file size (5MB max)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      toast.error("Image file size must be less than 5MB");
+      return;
+    }
+    
+    setImageFile(file);
+    
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(file);
+    setImagePreview(previewUrl);
+  };
+  
+  const resetImage = () => {
+    setImageFile(null);
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+      setImagePreview(null);
+    }
+  };
+  
+  const uploadImage = async (file: File): Promise<string> => {
+    setIsUploading(true);
+    try {
+      // Create a unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+      const filePath = `blog_images/${fileName}`;
+      
+      // Upload the file to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('blog_images')
+        .upload(filePath, file);
+        
+      if (uploadError) {
+        toast.error("Error uploading image: " + uploadError.message);
+        throw uploadError;
+      }
+      
+      // Get the public URL
+      const { data } = supabase.storage
+        .from('blog_images')
+        .getPublicUrl(filePath);
+        
+      return data.publicUrl;
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      throw error;
+    } finally {
+      setIsUploading(false);
+    }
+  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,13 +104,24 @@ const CreateBlog = () => {
     
     setIsSubmitting(true);
     try {
+      let imageUrl = "/lovable-uploads/cef8ce24-f36c-4060-8c3e-41ce14874770.png"; // Default image
+      
+      // If there's an image file, upload it
+      if (imageFile) {
+        imageUrl = await uploadImage(imageFile);
+      }
+      
       await addBlog({ 
         title, 
         content, 
         image_url: imageUrl 
       });
+      
+      toast.success("Blog post published successfully!");
+      navigate('/blogs');
     } catch (error) {
       console.error("Error creating blog post:", error);
+      toast.error("Failed to publish blog post. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -91,34 +171,56 @@ const CreateBlog = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="imageUrl" className="dark:text-white">Image URL</Label>
-                <Input
-                  id="imageUrl"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="Enter image URL"
-                  className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
-                />
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Use a Synjoint image or upload your own. Default image will be used if left empty.
-                </p>
-              </div>
-              
-              <div className="border rounded-md p-4 dark:border-gray-700">
-                <p className="text-sm font-medium mb-2 dark:text-white">Preview Image</p>
-                <div className="h-48 overflow-hidden rounded-md bg-gray-100 dark:bg-gray-700">
-                  {imageUrl ? (
-                    <img 
-                      src={imageUrl} 
-                      alt="Blog preview" 
-                      className="w-full h-full object-cover"
-                    />
+                <Label className="dark:text-white">Blog Image</Label>
+                <div className="border-2 border-dashed rounded-md p-4 dark:border-gray-700">
+                  {!imagePreview ? (
+                    <div className="flex flex-col items-center justify-center py-4">
+                      <Upload className="h-10 w-10 text-gray-400 mb-2" />
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                        Drag and drop an image, or click to browse
+                      </p>
+                      <input
+                        type="file"
+                        id="image-upload"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        onChange={handleImageChange}
+                        className="hidden"
+                      />
+                      <label htmlFor="image-upload">
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          className="dark:bg-gray-700 dark:border-gray-600"
+                        >
+                          Select Image
+                        </Button>
+                      </label>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                        Supported formats: JPG, PNG, WebP, GIF (max 5MB)
+                      </p>
+                    </div>
                   ) : (
-                    <div className="flex items-center justify-center h-full text-gray-400">
-                      No image preview available
+                    <div className="relative">
+                      <img 
+                        src={imagePreview} 
+                        alt="Blog preview" 
+                        className="max-h-64 mx-auto rounded-md object-contain"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        onClick={resetImage}
+                        className="absolute top-2 right-2 h-8 w-8 rounded-full"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
                   )}
                 </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Upload an image for your blog post. If left empty, a default image will be used.
+                </p>
               </div>
             </CardContent>
             <CardFooter className="flex justify-between">
@@ -133,9 +235,9 @@ const CreateBlog = () => {
               <Button 
                 type="submit" 
                 className="bg-synjoint-blue hover:bg-synjoint-blue/90"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isUploading}
               >
-                {isSubmitting ? "Publishing..." : "Publish Blog Post"}
+                {isSubmitting || isUploading ? "Publishing..." : "Publish Blog Post"}
               </Button>
             </CardFooter>
           </form>
