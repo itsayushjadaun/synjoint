@@ -66,7 +66,7 @@ const Navbar = () => {
               </div>
             </div>
             
-            <div className="hidden md:flex md:items-center md:space-x-4">
+            <div className="hidden md:flex md:items-center md:space-x-2">
               {navLinks.map((link) => (
                 <Link
                   key={link.path}
@@ -80,7 +80,7 @@ const Navbar = () => {
               ))}
               
               {user ? (
-                <div className="relative ml-3 flex items-center space-x-4">
+                <div className="relative ml-3 flex items-center space-x-2">
                   <Link
                     to={user.role === 'admin' ? "/admin" : "/profile"}
                     className="text-sm font-medium text-gray-800 dark:text-white hover:text-synjoint-orange dark:hover:text-synjoint-orange"
