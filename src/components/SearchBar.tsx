@@ -81,7 +81,7 @@ const SearchBar = () => {
             placeholder="Search pages or blogs..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="pr-10 dark:bg-gray-800 dark:text-white dark:border-gray-700"
+            className="h-8 px-2 text-sm pr-10 dark:bg-gray-800 dark:text-white dark:border-gray-700"
           />
           <Button 
             type="submit"
