@@ -1,6 +1,7 @@
 
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { Upload } from "lucide-react";
+import { toast } from "sonner";
 
 interface ApplyResumeUploadProps {
   accept: string;
@@ -11,42 +12,47 @@ interface ApplyResumeUploadProps {
 
 const ApplyResumeUpload: React.FC<ApplyResumeUploadProps> = ({ accept, maxSizeMB, onChange, required }) => {
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const [fileName, setFileName] = React.useState<string>("");
+  const [fileName, setFileName] = useState<string>("");
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
+    try {
+      setIsUploading(true);
       
-      // Validate file type properly
-      let validType = false;
-      const acceptTypes = accept.split(',');
-      
-      for (const type of acceptTypes) {
-        // Handle image types (e.g., image/jpeg)
-        if (type.includes('image/') && file.type.startsWith('image/')) {
-          validType = true;
-          break;
+      if (e.target.files && e.target.files[0]) {
+        const file = e.target.files[0];
+        
+        // Check file size
+        if (file.size > maxSizeMB * 1024 * 1024) {
+          toast.error(`File exceeds ${maxSizeMB}MB limit.`);
+          return;
         }
-        // Handle document types (application/pdf, etc)
-        else if (type.includes('application/') && file.type.includes('application/')) {
-          validType = true;
-          break;
+        
+        // Check file type
+        const acceptedTypes = accept.split(',').map(type => type.trim());
+        const fileType = file.type;
+        
+        if (!acceptedTypes.some(type => {
+          // Handle wildcards like application/*, image/*
+          if (type.endsWith('*')) {
+            const prefix = type.split('*')[0];
+            return fileType.startsWith(prefix);
+          }
+          return type === fileType;
+        })) {
+          toast.error(`Invalid file type. Please upload ${acceptedTypes.join(', ')}`);
+          return;
         }
+        
+        setFileName(file.name);
+        onChange(file);
+        console.log("File selected successfully:", file.name);
       }
-      
-      if (!validType) {
-        alert("Invalid file type. Please upload a file that matches the accepted formats.");
-        return;
-      }
-      
-      // Validate size
-      if (file.size > maxSizeMB * 1024 * 1024) {
-        alert(`File exceeds ${maxSizeMB}MB limit.`);
-        return;
-      }
-      
-      setFileName(file.name);
-      onChange(file);
+    } catch (error) {
+      console.error("Error handling file:", error);
+      toast.error("Error processing your file");
+    } finally {
+      setIsUploading(false);
     }
   };
   
@@ -54,12 +60,22 @@ const ApplyResumeUpload: React.FC<ApplyResumeUploadProps> = ({ accept, maxSizeMB
     <div>
       <button
         type="button"
-        className="flex items-center px-3 py-2 bg-gray-200 rounded text-gray-900 hover:bg-gray-300 transition mb-2"
+        className="flex items-center px-3 py-2 bg-gray-200 rounded text-gray-900 hover:bg-gray-300 transition mb-2 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
         onClick={() => inputRef.current?.click()}
         aria-label="Upload file"
+        disabled={isUploading}
       >
-        <Upload className="h-4 w-4 mr-2" />
-        {fileName || "Select file"}
+        {isUploading ? (
+          <>
+            <div className="animate-spin h-4 w-4 border-b-2 rounded-full border-gray-800 dark:border-white mr-2"></div>
+            Uploading...
+          </>
+        ) : (
+          <>
+            <Upload className="h-4 w-4 mr-2" />
+            {fileName || "Select file"}
+          </>
+        )}
       </button>
       <input
         ref={inputRef}

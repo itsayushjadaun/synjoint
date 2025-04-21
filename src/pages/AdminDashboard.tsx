@@ -5,15 +5,11 @@ import { useAuth } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, Briefcase, Users, ArrowRight, Mail, Phone } from "lucide-react";
+import { FileText, Briefcase, Users, ArrowRight, Mail, Phone, Download, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL || '',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-);
+import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 
 const AdminDashboard = () => {
   const { user, blogs, careers } = useAuth();
@@ -33,14 +29,31 @@ const AdminDashboard = () => {
         setLoading(true);
         
         try {
+          // Fetch job applications with real-time updates
           const { data: appData, error: appError } = await supabase
             .from('job_applications')
             .select('*')
             .order('created_at', { ascending: false });
             
           if (appError) throw appError;
+          console.log("Fetched job applications:", appData);
           setApplications(appData || []);
           
+          // Subscribe to real-time updates for job applications
+          const appChannel = supabase
+            .channel('public:job_applications')
+            .on('postgres_changes', { 
+              event: '*', 
+              schema: 'public', 
+              table: 'job_applications' 
+            }, payload => {
+              console.log('Real-time update for job applications:', payload);
+              // Reload applications when changes occur
+              fetchJobApplications();
+            })
+            .subscribe();
+            
+          // Fetch contact messages
           const { data: contactData, error: contactError } = await supabase
             .from('contact_messages')
             .select('*')
@@ -48,6 +61,25 @@ const AdminDashboard = () => {
             
           if (contactError) throw contactError;
           setContactMessages(contactData || []);
+          
+          // Subscribe to real-time updates for contact messages
+          const contactChannel = supabase
+            .channel('public:contact_messages')
+            .on('postgres_changes', { 
+              event: '*', 
+              schema: 'public', 
+              table: 'contact_messages' 
+            }, payload => {
+              console.log('Real-time update for contact messages:', payload);
+              // Reload contact messages when changes occur
+              fetchContactMessages();
+            })
+            .subscribe();
+          
+          return () => {
+            supabase.removeChannel(appChannel);
+            supabase.removeChannel(contactChannel);
+          };
         } catch (error) {
           console.error('Error fetching admin data:', error);
         } finally {
@@ -55,9 +87,61 @@ const AdminDashboard = () => {
         }
       };
       
+      const fetchJobApplications = async () => {
+        const { data, error } = await supabase
+          .from('job_applications')
+          .select('*')
+          .order('created_at', { ascending: false });
+          
+        if (!error) {
+          setApplications(data || []);
+        }
+      };
+      
+      const fetchContactMessages = async () => {
+        const { data, error } = await supabase
+          .from('contact_messages')
+          .select('*')
+          .order('created_at', { ascending: false });
+          
+        if (!error) {
+          setContactMessages(data || []);
+        }
+      };
+      
       fetchData();
     }
   }, [user, navigate]);
+  
+  const getStatusBadge = (status) => {
+    switch(status) {
+      case 'new':
+        return <Badge className="bg-blue-500">New</Badge>;
+      case 'contacted':
+        return <Badge className="bg-orange-500">Contacted</Badge>;
+      case 'interviewing':
+        return <Badge className="bg-purple-500">Interviewing</Badge>;
+      case 'hired':
+        return <Badge className="bg-green-500">Hired</Badge>;
+      case 'rejected':
+        return <Badge className="bg-red-500">Rejected</Badge>;
+      default:
+        return <Badge className="bg-gray-500">{status}</Badge>;
+    }
+  };
+  
+  const updateApplicationStatus = async (id, status) => {
+    try {
+      const { error } = await supabase
+        .from('job_applications')
+        .update({ status })
+        .eq('id', id);
+        
+      if (error) throw error;
+    } catch (error) {
+      console.error("Error updating application status:", error);
+    }
+  };
   
   if (!user || user.role !== 'admin') {
     return null;
@@ -160,18 +244,22 @@ const AdminDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {[...blogs, ...careers]
+                  {[...blogs, ...careers, ...applications.slice(0, 3)]
                     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
                     .slice(0, 5)
                     .map((item) => (
                       <div key={item.id} className="flex items-center pb-4 border-b">
                         {'content' in item ? (
                           <FileText className="h-5 w-5 text-synjoint-blue mr-3" />
-                        ) : (
+                        ) : 'requirements' in item ? (
                           <Briefcase className="h-5 w-5 text-synjoint-blue mr-3" />
+                        ) : (
+                          <Users className="h-5 w-5 text-synjoint-blue mr-3" />
                         )}
                         <div>
-                          <p className="font-medium">{item.title}</p>
+                          <p className="font-medium">
+                            {'title' in item ? item.title : 'position' in item ? `Application: ${item.position}` : item.name}
+                          </p>
                           <p className="text-sm text-gray-500">
                             {new Date(item.created_at).toLocaleDateString('en-US', {
                               year: 'numeric',
@@ -183,7 +271,7 @@ const AdminDashboard = () => {
                       </div>
                     ))}
                   
-                  {[...blogs, ...careers].length === 0 && (
+                  {[...blogs, ...careers, ...applications].length === 0 && (
                     <div className="text-center py-4">
                       <p className="text-gray-500">No recent activity</p>
                     </div>
@@ -211,9 +299,12 @@ const AdminDashboard = () => {
                   <div className="space-y-6">
                     {applications.map((app) => (
                       <div key={app.id} className="border rounded-lg p-4 dark:border-gray-700">
-                        <div className="flex justify-between items-start">
+                        <div className="flex flex-wrap justify-between items-start gap-2">
                           <div>
-                            <h3 className="font-semibold text-lg">{app.name}</h3>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-semibold text-lg">{app.name}</h3>
+                              {getStatusBadge(app.status)}
+                            </div>
                             <p className="text-sm text-gray-500">
                               Applied for: <span className="font-medium text-synjoint-blue">{app.position}</span>
                             </p>
@@ -239,7 +330,9 @@ const AdminDashboard = () => {
                           {app.phone && (
                             <p className="flex items-center text-sm">
                               <Phone className="h-4 w-4 mr-2 text-gray-400" />
-                              {app.phone}
+                              <a href={`tel:${app.phone}`} className="text-synjoint-blue hover:underline">
+                                {app.phone}
+                              </a>
                             </p>
                           )}
                         </div>
@@ -250,18 +343,68 @@ const AdminDashboard = () => {
                         </div>
                         
                         {app.resume_url && (
-                          <div className="mt-4">
+                          <div className="mt-4 flex gap-2">
                             <a 
                               href={app.resume_url} 
                               target="_blank" 
                               rel="noopener noreferrer"
                               className="text-synjoint-blue hover:underline flex items-center"
                             >
-                              <FileText className="h-4 w-4 mr-2" />
+                              <ExternalLink className="h-4 w-4 mr-2" />
                               View Resume
+                            </a>
+                            <a 
+                              href={app.resume_url} 
+                              download
+                              className="text-synjoint-blue hover:underline flex items-center"
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Download
                             </a>
                           </div>
                         )}
+                        
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          <select 
+                            className="px-3 py-1 border rounded text-sm"
+                            value={app.status}
+                            onChange={(e) => updateApplicationStatus(app.id, e.target.value)}
+                          >
+                            <option value="new">New</option>
+                            <option value="contacted">Contacted</option>
+                            <option value="interviewing">Interviewing</option>
+                            <option value="hired">Hired</option>
+                            <option value="rejected">Rejected</option>
+                          </select>
+                          
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => window.location.href = `mailto:${app.email}?subject=Re: Your application for ${app.position}&body=Dear ${app.name},%0A%0A`}
+                          >
+                            Reply via Email
+                          </Button>
+                          
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              const msg = `Hello ${app.name}, regarding your application for ${app.position} at Synjoint...`;
+                              const phone = app.phone?.replace(/\D/g, '') || '';
+                              if (phone) {
+                                window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+                              } else {
+                                toast({
+                                  title: "No phone number",
+                                  description: "This applicant didn't provide a phone number",
+                                  variant: "destructive"
+                                });
+                              }
+                            }}
+                          >
+                            WhatsApp
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>

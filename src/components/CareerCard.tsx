@@ -7,14 +7,8 @@ import { Label } from "@/components/ui/label";
 import { MapPin, Calendar } from "lucide-react";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
-import { createClient } from "@supabase/supabase-js";
 import ApplyResumeUpload from "./ApplyResumeUpload";
-import { sendWhatsAppMessage } from "../utils/whatsapp";
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL || '',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-);
+import { supabase } from "@/integrations/supabase/client";
 
 interface CareerCardProps {
   id: string;
@@ -43,26 +37,52 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (file: File) => setResumeFile(file);
+  const handleFileChange = (file: File) => {
+    console.log("Resume file received:", file.name);
+    setResumeFile(file);
+  };
 
   const uploadResumeToSupabase = async (file: File) => {
     try {
-      const { supabase } = await import("@/utils/supabase");
-      const bucket = "career-resumes";
-      const ext = file.name.split('.').pop();
-      const filePath = `resume_${Date.now()}_${file.name}`;
-      const { data, error } = await supabase.storage.from(bucket).upload(filePath, file);
+      console.log("Starting resume upload to Supabase");
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+      const filePath = `resumes/${fileName}`;
       
-      if (error) {
-        console.error("Resume upload error:", error);
-        throw error;
+      // Create a storage bucket if it doesn't exist
+      const { data: bucketData, error: bucketError } = await supabase.storage.getBucket('career-resumes');
+      if (bucketError && bucketError.message.includes('not found')) {
+        const { error: createError } = await supabase.storage.createBucket('career-resumes', {
+          public: true
+        });
+        if (createError) throw createError;
       }
       
-      return supabase.storage.from(bucket).getPublicUrl(filePath).data.publicUrl;
+      const { data, error } = await supabase.storage
+        .from('career-resumes')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+        
+      if (error) throw error;
+      
+      const { data: urlData } = supabase.storage
+        .from('career-resumes')
+        .getPublicUrl(filePath);
+        
+      console.log("Resume uploaded successfully:", urlData.publicUrl);
+      return urlData.publicUrl;
     } catch (error) {
-      console.error("Resume upload error details:", error);
+      console.error("Resume upload failed:", error);
+      toast.error("Failed to upload resume. Please try again.");
       throw error;
     }
+  };
+
+  const handleWhatsAppRedirect = (waUrl) => {
+    console.log("Opening WhatsApp with URL:", waUrl);
+    window.open(waUrl, "_blank");
   };
 
   const handleSubmit = async (e) => {
@@ -76,6 +96,7 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
       });
       return;
     }
+    
     setIsSubmitting(true);
 
     try {
@@ -83,12 +104,7 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
       try {
         resumeUrl = await uploadResumeToSupabase(resumeFile);
       } catch (fileErr) {
-        console.error("Resume upload failed:", fileErr);
-        toast({
-          title: "Resume upload failed",
-          description: "Please check your file and try again.",
-          variant: "destructive"
-        });
+        // Error already handled in uploadResumeToSupabase
         setIsSubmitting(false);
         return;
       }
@@ -102,9 +118,12 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
         })
       });
 
-      // Email/WhatsApp integration
-      const waMsg = `New application for ${title}\nName: ${formData.name}\nEmail: ${formData.email}\nPhone: ${formData.phone}\nMessage: ${formData.message}\nResume: ${resumeUrl}`;
-      await sendWhatsAppMessage(waMsg);
+      if (error) throw error;
+      
+      // Handle WhatsApp integration if provided in the response
+      if (data?.whatsapp?.whatsappUrl) {
+        handleWhatsAppRedirect(data.whatsapp.whatsappUrl);
+      }
 
       toast({
         title: "Application submitted",
@@ -112,6 +131,7 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
         duration: 5000
       });
 
+      // Reset form
       setFormData({
         name: "",
         email: "",
@@ -173,7 +193,7 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
               Apply Now
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Apply for {title}</DialogTitle>
               <DialogDescription>
@@ -193,7 +213,7 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
                 />
               </div>
               
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
                   <Input
@@ -241,6 +261,11 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
                     onChange={handleFileChange}
                     required
                   />
+                  {resumeFile && (
+                    <p className="text-xs text-green-600 mt-1">
+                      ✓ {resumeFile.name} selected
+                    </p>
+                  )}
                 </div>
               </div>
               
