@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
@@ -84,21 +85,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         setIsLoading(true);
         
-        const { user, error } = await authAPI.getCurrentUser();
+        // Get the current session directly from supabase
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
         
-        if (error) {
-          console.error('Error getting current user:', error);
+        if (sessionError) {
+          console.error('Error getting session:', sessionError);
+          setIsLoading(false);
+          return;
         }
         
-        if (user) {
-          setUser({
-            id: user.id,
-            email: user.email || '',
-            name: user.user_metadata.name || user.profile?.name || user.email?.split('@')[0] || 'User',
-            role: user.profile?.role || (user.email?.endsWith('@synjoint.com') ? 'admin' : 'user'),
-            picture: user.user_metadata.avatar_url || user.profile?.picture,
-            count: user.profile?.count || 1
-          });
+        if (sessionData?.session) {
+          console.log('Session found:', sessionData.session);
+          const { user: currentUser } = await authAPI.getCurrentUser();
+          
+          if (currentUser) {
+            setUser({
+              id: currentUser.id,
+              email: currentUser.email || '',
+              name: currentUser.user_metadata?.name || currentUser.profile?.name || currentUser.email?.split('@')[0] || 'User',
+              role: currentUser.profile?.role || (currentUser.email?.endsWith('@synjoint.com') ? 'admin' : 'user'),
+              picture: currentUser.user_metadata?.avatar_url || currentUser.profile?.picture,
+              count: currentUser.profile?.count || 1
+            });
+          }
         }
         
         await refreshBlogs();
@@ -111,42 +120,54 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     };
     
+    // Set up the auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("Auth state changed:", event, session);
         if (event === 'SIGNED_IN' && session?.user) {
-          const { user: currentUser } = await authAPI.getCurrentUser();
-          if (currentUser) {
-            setUser({
-              id: currentUser.id,
-              email: currentUser.email || '',
-              name: currentUser.user_metadata.name || currentUser.profile?.name || currentUser.email?.split('@')[0] || 'User',
-              role: currentUser.profile?.role || (currentUser.email?.endsWith('@synjoint.com') ? 'admin' : 'user'),
-              picture: currentUser.user_metadata.avatar_url || currentUser.profile?.picture,
-              count: currentUser.profile?.count || 1
-            });
-            
-            await refreshBlogs();
-            await refreshCareers();
-          }
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-        } else if (event === 'USER_UPDATED') {
-          if (session?.user) {
+          try {
+            // Handle sign-in event
             const { user: currentUser } = await authAPI.getCurrentUser();
             if (currentUser) {
               setUser({
                 id: currentUser.id,
                 email: currentUser.email || '',
-                name: currentUser.user_metadata.name || currentUser.profile?.name || currentUser.email?.split('@')[0] || 'User',
+                name: currentUser.user_metadata?.name || currentUser.profile?.name || currentUser.email?.split('@')[0] || 'User',
                 role: currentUser.profile?.role || (currentUser.email?.endsWith('@synjoint.com') ? 'admin' : 'user'),
-                picture: currentUser.user_metadata.avatar_url || currentUser.profile?.picture,
+                picture: currentUser.user_metadata?.avatar_url || currentUser.profile?.picture,
                 count: currentUser.profile?.count || 1
               });
               
-              if (currentUser.email_confirmed_at) {
-                toast.success("Email confirmed successfully!");
+              await refreshBlogs();
+              await refreshCareers();
+            }
+          } catch (error) {
+            console.error('Error handling sign-in:', error);
+          }
+        } else if (event === 'SIGNED_OUT') {
+          // Handle sign-out event
+          setUser(null);
+        } else if (event === 'USER_UPDATED') {
+          // Handle user update event
+          if (session?.user) {
+            try {
+              const { user: currentUser } = await authAPI.getCurrentUser();
+              if (currentUser) {
+                setUser({
+                  id: currentUser.id,
+                  email: currentUser.email || '',
+                  name: currentUser.user_metadata?.name || currentUser.profile?.name || currentUser.email?.split('@')[0] || 'User',
+                  role: currentUser.profile?.role || (currentUser.email?.endsWith('@synjoint.com') ? 'admin' : 'user'),
+                  picture: currentUser.user_metadata?.avatar_url || currentUser.profile?.picture,
+                  count: currentUser.profile?.count || 1
+                });
+                
+                if (currentUser.email_confirmed_at) {
+                  toast.success("Email confirmed successfully!");
+                }
               }
+            } catch (error) {
+              console.error('Error handling user update:', error);
             }
           }
         }
@@ -192,7 +213,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     try {
       console.log("Attempting login for:", email);
-      const { data, error } = await authAPI.signIn(email, password);
+      
+      // Use the supabase client directly for more reliable authentication
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
       
       if (error) {
         console.error("Login error:", error);
@@ -211,7 +237,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (data?.user) {
         console.log("Login successful, user:", data.user);
         toast.success("Login successful!");
-        // Note: User will be set by the auth state change listener
+        // The auth state change listener will handle setting the user
       }
     } catch (error: any) {
       console.error("Login error:", error);

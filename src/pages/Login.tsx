@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
@@ -65,21 +64,9 @@ const Login = () => {
     
     setLoginIsLoading(true);
     
-    // Set up a timeout to detect if login is taking too long
-    const loginTimeoutId = setTimeout(() => {
-      if (loginIsLoading) {
-        setLoginError("Login is taking longer than expected. Please try again.");
-        setLoginIsLoading(false);
-        toast.error("Login timed out. Please try again.");
-      }
-    }, 10000); // 10 seconds timeout
-    
     try {
       console.log(`Attempting to login with email: ${loginEmail}`);
       await login(loginEmail, loginPassword);
-      // Clear timeout as login attempt has completed
-      clearTimeout(loginTimeoutId);
-      
       // If login is successful, user state will be updated and the useEffect will redirect
     } catch (error: any) {
       console.error("Login error:", error);
@@ -94,9 +81,6 @@ const Login = () => {
       
       setLoginError(errorMessage);
       toast.error(errorMessage);
-      
-      // Clear timeout as login attempt has completed with an error
-      clearTimeout(loginTimeoutId);
     } finally {
       setLoginIsLoading(false);
     }
@@ -138,7 +122,6 @@ const Login = () => {
         setSignupComplete(true);
         toast.success("Please check your email to confirm your account.");
       } else if (response && response.error) {
-        // Display the specific error message
         const errorMessage = response.error.message || "Signup failed. Please try again.";
         setSignupError(errorMessage);
         toast.error(errorMessage);
@@ -263,7 +246,7 @@ const Login = () => {
                     className="w-full bg-synjoint-blue hover:bg-synjoint-blue/90 dark:bg-blue-600 dark:hover:bg-blue-700 relative z-50"
                     disabled={loginIsLoading || authIsLoading}
                   >
-                    {loginIsLoading ? (
+                    {loginIsLoading || authIsLoading ? (
                       <div className="flex items-center">
                         <div className="animate-spin mr-2 h-4 w-4 border-b-2 rounded-full border-white"></div>
                         <span>Signing in...</span>

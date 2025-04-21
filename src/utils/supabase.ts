@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -7,9 +8,17 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.error('Missing Supabase credentials. Check your .env file.');
 }
 
+// Create a single instance of the Supabase client to be used throughout the app
 export const supabase = createClient(
   supabaseUrl || '',
-  supabaseAnonKey || ''
+  supabaseAnonKey || '',
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      storageKey: 'synjoint-auth-token'
+    }
+  }
 );
 
 export type Database = {
