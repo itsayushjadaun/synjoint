@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -9,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import ApplyResumeUpload from "../components/ApplyResumeUpload";
+import { supabase } from "@/utils/supabase";
 
 const CreateBlog = () => {
   const { user, addBlog } = useAuth();
@@ -33,18 +35,65 @@ const CreateBlog = () => {
 
   const uploadImageToSupabase = async (file: File): Promise<string> => {
     try {
-      const { supabase } = await import("@/utils/supabase");
-      const bucket = "blog-images";
+      console.log("Starting upload to Supabase, checking if bucket exists...");
+      
+      // First, check if bucket exists, create it if not
+      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+      
+      if (bucketsError) {
+        console.error("Error checking buckets:", bucketsError);
+        throw bucketsError;
+      }
+      
+      const bucketName = "blog-images";
+      const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
+      
+      if (!bucketExists) {
+        console.log("Blog images bucket doesn't exist, creating it...");
+        const { error: createError } = await supabase.storage.createBucket(bucketName, { 
+          public: true 
+        });
+        
+        if (createError) {
+          console.error("Error creating bucket:", createError);
+          throw createError;
+        }
+        
+        // Add policy for public read access
+        const { error: policyError } = await supabase.rpc('create_storage_policy', {
+          bucket_name: bucketName,
+          policy_name: 'Public Read Access',
+          definition: `bucket_id = '${bucketName}' AND auth.role() = 'authenticated'`,
+          permission: 'ALL'
+        });
+        
+        if (policyError && !policyError.message.includes('already exists')) {
+          console.warn("Policy creation warning:", policyError);
+        }
+      }
+      
+      // Now upload the file
       const ext = file.name.split(".").pop();
       const filePath = `blog_${Date.now()}.${ext}`;
-      const { data, error } = await supabase.storage.from(bucket).upload(filePath, file);
+      
+      const { data, error } = await supabase.storage
+        .from(bucketName)
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
       
       if (error) {
         console.error("Supabase storage upload error:", error);
         throw error;
       }
       
-      return supabase.storage.from(bucket).getPublicUrl(filePath).data.publicUrl;
+      const { data: urlData } = supabase.storage
+        .from(bucketName)
+        .getPublicUrl(filePath);
+      
+      console.log("File uploaded successfully:", urlData.publicUrl);
+      return urlData.publicUrl;
     } catch (error) {
       console.error("Image upload error:", error);
       throw error;

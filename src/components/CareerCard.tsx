@@ -6,9 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MapPin, Calendar } from "lucide-react";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import ApplyResumeUpload from "./ApplyResumeUpload";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/utils/supabase";
+import { sendWhatsAppMessage } from "@/utils/whatsapp";
 
 interface CareerCardProps {
   id: string;
@@ -32,7 +33,7 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const { toast } = useToast();
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
@@ -49,17 +50,31 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
       const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
       const filePath = `resumes/${fileName}`;
       
-      // Create a storage bucket if it doesn't exist
-      const { data: bucketData, error: bucketError } = await supabase.storage.getBucket('career-resumes');
-      if (bucketError && bucketError.message.includes('not found')) {
-        const { error: createError } = await supabase.storage.createBucket('career-resumes', {
-          public: true
+      // Check if bucket exists
+      const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
+      
+      if (bucketError) {
+        console.error("Error checking buckets:", bucketError);
+        throw bucketError;
+      }
+      
+      const bucketName = "career-resumes";
+      const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
+      
+      if (!bucketExists) {
+        console.log("Career resumes bucket doesn't exist, creating it...");
+        const { error: createError } = await supabase.storage.createBucket(bucketName, { 
+          public: true 
         });
-        if (createError) throw createError;
+        
+        if (createError) {
+          console.error("Error creating bucket:", createError);
+          throw createError;
+        }
       }
       
       const { data, error } = await supabase.storage
-        .from('career-resumes')
+        .from(bucketName)
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
@@ -68,24 +83,47 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
       if (error) throw error;
       
       const { data: urlData } = supabase.storage
-        .from('career-resumes')
+        .from(bucketName)
         .getPublicUrl(filePath);
         
       console.log("Resume uploaded successfully:", urlData.publicUrl);
       return urlData.publicUrl;
     } catch (error) {
       console.error("Resume upload failed:", error);
-      toast.error("Failed to upload resume. Please try again.");
+      toast({
+        title: "Upload Failed",
+        description: "Failed to upload resume. Please try again.",
+        variant: "destructive"
+      });
       throw error;
     }
   };
 
-  const handleWhatsAppRedirect = (waUrl) => {
-    console.log("Opening WhatsApp with URL:", waUrl);
-    window.open(waUrl, "_blank");
+  const saveApplicationToDatabase = async (applicationData: any) => {
+    try {
+      const { data, error } = await supabase
+        .from('job_applications')
+        .insert({
+          position: applicationData.position,
+          name: applicationData.name,
+          email: applicationData.email,
+          phone: applicationData.phone || null,
+          message: applicationData.message,
+          resume_url: applicationData.resume_url,
+          status: 'pending'
+        })
+        .select();
+      
+      if (error) throw error;
+      
+      return data;
+    } catch (error) {
+      console.error("Error saving application to database:", error);
+      throw error;
+    }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.name || !formData.email || !formData.message || !resumeFile) {
@@ -109,20 +147,28 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
         return;
       }
       
-      // Call the Supabase Edge Function
-      const { data, error } = await supabase.functions.invoke('career-apply', {
-        body: JSON.stringify({
-          ...formData,
-          position: title,
-          resume_url: resumeUrl
-        })
-      });
-
-      if (error) throw error;
+      // Save application to the database
+      const applicationData = {
+        ...formData,
+        position: title,
+        resume_url: resumeUrl
+      };
       
-      // Handle WhatsApp integration if provided in the response
-      if (data?.whatsapp?.whatsappUrl) {
-        handleWhatsAppRedirect(data.whatsapp.whatsappUrl);
+      await saveApplicationToDatabase(applicationData);
+      
+      // Send WhatsApp message
+      const message = `New job application received!\n\nPosition: ${title}\nName: ${formData.name}\nEmail: ${formData.email}\nPhone: ${formData.phone || 'Not provided'}\n\nApplicant message: ${formData.message.substring(0, 100)}${formData.message.length > 100 ? '...' : ''}`;
+      
+      const whatsappResult = sendWhatsAppMessage(message);
+      
+      // Also call the Supabase Edge Function if needed
+      try {
+        await supabase.functions.invoke('career-apply', {
+          body: JSON.stringify(applicationData)
+        });
+      } catch (functionError) {
+        console.error("Edge function error:", functionError);
+        // Don't fail the submission if edge function fails
       }
 
       toast({
@@ -145,7 +191,7 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
       console.error("Error submitting application:", error);
       toast({
         title: "Failed to submit application",
-        description: error.message || "Please try again later",
+        description: error instanceof Error ? error.message : "Please try again later",
         variant: "destructive"
       });
     } finally {

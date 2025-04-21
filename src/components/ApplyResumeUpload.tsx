@@ -25,6 +25,7 @@ const ApplyResumeUpload: React.FC<ApplyResumeUploadProps> = ({ accept, maxSizeMB
         // Check file size
         if (file.size > maxSizeMB * 1024 * 1024) {
           toast.error(`File exceeds ${maxSizeMB}MB limit.`);
+          setIsUploading(false);
           return;
         }
         
@@ -32,15 +33,18 @@ const ApplyResumeUpload: React.FC<ApplyResumeUploadProps> = ({ accept, maxSizeMB
         const acceptedTypes = accept.split(',').map(type => type.trim());
         const fileType = file.type;
         
-        if (!acceptedTypes.some(type => {
+        const isAcceptedType = acceptedTypes.some(type => {
           // Handle wildcards like application/*, image/*
           if (type.endsWith('*')) {
             const prefix = type.split('*')[0];
             return fileType.startsWith(prefix);
           }
           return type === fileType;
-        })) {
+        });
+        
+        if (!isAcceptedType) {
           toast.error(`Invalid file type. Please upload ${acceptedTypes.join(', ')}`);
+          setIsUploading(false);
           return;
         }
         

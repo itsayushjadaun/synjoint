@@ -8,22 +8,31 @@ export function sendWhatsAppMessage(message: string) {
   const encodedMessage = encodeURIComponent(message);
   const url = `https://wa.me/${phone}?text=${encodedMessage}`;
   
-  // Open WhatsApp in a new tab
-  const newWindow = window.open(url, "_blank");
-  
-  // Check if the window was successfully opened
-  if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-    console.warn("WhatsApp window could not be opened. The popup was likely blocked by the browser.");
-    // Fallback to returning the URL which could be used elsewhere
+  try {
+    // Open WhatsApp in a new tab
+    const newWindow = window.open(url, "_blank");
+    
+    // Check if the window was successfully opened
+    if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+      console.warn("WhatsApp window could not be opened. The popup was likely blocked by the browser.");
+      // Return the URL which could be used elsewhere
+      return {
+        success: false,
+        url,
+        message: "WhatsApp window was blocked. Please enable popups or use the link manually."
+      };
+    }
+    
+    return {
+      success: true,
+      url
+    };
+  } catch (error) {
+    console.error("Error opening WhatsApp:", error);
     return {
       success: false,
       url,
-      message: "WhatsApp window was blocked. Please enable popups or use the link manually."
+      message: "Error opening WhatsApp. Please try manually."
     };
   }
-  
-  return {
-    success: true,
-    url
-  };
 }
