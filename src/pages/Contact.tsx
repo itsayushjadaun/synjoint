@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Navbar from "../components/Navbar";
@@ -9,6 +8,7 @@ import { toast } from "sonner";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import Footer from "../components/Footer";
+import { sendWhatsAppMessage } from "../utils/whatsapp";
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL || '',
@@ -31,7 +31,6 @@ const Contact = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Basic validation
     if (!formData.name || !formData.email || !formData.message) {
       toast.error("Please fill in all fields");
       return;
@@ -40,12 +39,14 @@ const Contact = () => {
     setIsSubmitting(true);
     
     try {
-      // Call the Supabase Edge Function
       const { data, error } = await supabase.functions.invoke('send-contact-email', {
         body: JSON.stringify(formData)
       });
       
       if (error) throw error;
+      
+      const waMsg = `Contact Form:\nName: ${formData.name}\nEmail: ${formData.email}\nMessage: ${formData.message}`;
+      await sendWhatsAppMessage(waMsg);
       
       toast.success("Your message has been sent! We'll get back to you soon.");
       setFormData({ name: "", email: "", message: "" });
@@ -118,7 +119,7 @@ const Contact = () => {
               
               <div className="mt-10">
                 <iframe 
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3582.6275392801054!2d74.66135791503705!3d26.10445898347091!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x396bea9f6aeb99e3%3A0x3c8a3c81f1c73ad9!2sRIICO%20Industrial%20Area%2C%20Palra%2C%20Ajmer%2C%20Rajasthan%20305001!5e0!3m2!1sen!2sin!4v1650450644762!5m2!1sen!2sin" 
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3582.6275392801054!2d74.66135791503705!3d26.10445898347091!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x396bea9f6aeb99e3%3A0x3c8a3c81f1c73ad9!2sRIICO%20Industrial%20Area%2C%20Palra%2C%20Ajmer%2C%20Rajasthan%20305001!5e0!3m2!1sen!2sin!4v1650450644762!5m2!1sen!2sin!4v1650450644762!5m2!1sen!2sin" 
                   width="100%" 
                   height="300" 
                   style={{ border: 0, borderRadius: '8px' }}

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,8 @@ import { MapPin, Calendar } from "lucide-react";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
 import { createClient } from "@supabase/supabase-js";
+import ApplyResumeUpload from "./ApplyResumeUpload";
+import { sendWhatsAppMessage } from "../utils/whatsapp";
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL || '',
@@ -33,6 +34,7 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
     resume_url: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
   const { toast } = useToast();
 
   const handleChange = (e) => {
@@ -40,38 +42,63 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleFileChange = (file: File) => setResumeFile(file);
+
+  const uploadResumeToSupabase = async (file: File) => {
+    const { supabase } = await import("@/utils/supabase");
+    const bucket = "career-resumes";
+    const ext = file.name.split('.').pop();
+    const filePath = `resume_${Date.now()}_${file.name}`;
+    const { data, error } = await supabase.storage.from(bucket).upload(filePath, file);
+    if (error) throw error;
+    return supabase.storage.from(bucket).getPublicUrl(filePath).data.publicUrl;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!formData.name || !formData.email || !formData.message) {
+
+    if (!formData.name || !formData.email || !formData.message || !resumeFile) {
       toast({
         title: "Missing information",
-        description: "Please fill in all required fields",
+        description: "Please fill in all required fields, including resume.",
         variant: "destructive"
       });
       return;
     }
-    
     setIsSubmitting(true);
-    
+
     try {
+      let resumeUrl = "";
+      try {
+        resumeUrl = await uploadResumeToSupabase(resumeFile);
+      } catch (fileErr) {
+        toast({
+          title: "Resume upload failed",
+          description: "Please check your file and try again.",
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
       // Call the Supabase Edge Function
       const { data, error } = await supabase.functions.invoke('career-apply', {
         body: JSON.stringify({
           ...formData,
-          position: title
+          position: title,
+          resume_url: resumeUrl
         })
       });
-      
-      if (error) throw error;
-      
+
+      // Email/WhatsApp integration
+      const waMsg = `New application for ${title}\nName: ${formData.name}\nEmail: ${formData.email}\nPhone: ${formData.phone}\nMessage: ${formData.message}\nResume: ${resumeUrl}`;
+      await sendWhatsAppMessage(waMsg);
+
       toast({
         title: "Application submitted",
-        description: "Thank you for your interest. We'll review your application and contact you soon.",
+        description: "Thank you. We'll contact you soon.",
         duration: 5000
       });
-      
-      // Reset form and close dialog
+
       setFormData({
         name: "",
         email: "",
@@ -79,6 +106,7 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
         message: "",
         resume_url: ""
       });
+      setResumeFile(null);
       setIsOpen(false);
     } catch (error) {
       console.error("Error submitting application:", error);
@@ -187,13 +215,12 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="resume_url">Resume Link (Google Drive, Dropbox, etc.)</Label>
-                <Input
-                  id="resume_url"
-                  name="resume_url"
-                  placeholder="https://drive.google.com/..."
-                  value={formData.resume_url}
-                  onChange={handleChange}
+                <Label htmlFor="resume_file">Resume (PDF or DOC) <span className="text-red-500">*</span></Label>
+                <ApplyResumeUpload
+                  accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  maxSizeMB={5}
+                  onChange={handleFileChange}
+                  required
                 />
               </div>
               

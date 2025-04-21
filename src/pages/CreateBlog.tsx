@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -9,44 +8,72 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import ApplyResumeUpload from "../components/ApplyResumeUpload";
 
 const CreateBlog = () => {
   const { user, addBlog } = useAuth();
   const navigate = useNavigate();
-  
+
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [imageUrl, setImageUrl] = useState("/lovable-uploads/cef8ce24-f36c-4060-8c3e-41ce14874770.png");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageUrl, setImageUrl] = useState<string>("/lovable-uploads/cef8ce24-f36c-4060-8c3e-41ce14874770.png");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  useEffect(() => {
-    // Redirect if not admin
-    if (!user || user.role !== 'admin') {
-      navigate('/');
-    }
-  }, [user, navigate]);
-  
+
+  const handleImageChange = (file: File) => {
+    setImageFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (e.target?.result && typeof e.target.result === "string") {
+        setImageUrl(e.target.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const uploadImageToSupabase = async (file: File): Promise<string> => {
+    const { supabase } = await import("@/utils/supabase");
+    const bucket = "blog-images";
+    const ext = file.name.split(".").pop();
+    const filePath = `blog_${Date.now()}.${ext}`;
+    const { data, error } = await supabase.storage.from(bucket).upload(filePath, file);
+    if (error) throw error;
+    return supabase.storage.from(bucket).getPublicUrl(filePath).data.publicUrl;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !content) {
-      toast.error("Please fill in all required fields");
+    if (!title || !content || !imageFile) {
+      toast.error("Please fill in all required fields and upload an image.");
       return;
     }
-    
+
     setIsSubmitting(true);
     try {
+      let url = imageUrl;
+      try {
+        url = await uploadImageToSupabase(imageFile);
+      } catch (imgError) {
+        toast.error("Image upload failed, please try again.");
+        setIsSubmitting(false);
+        return;
+      }
+
       await addBlog({ 
         title, 
         content, 
-        image_url: imageUrl 
+        image_url: url
       });
+      toast.success("Blog post published!");
+      navigate('/blogs');
     } catch (error) {
       console.error("Error creating blog post:", error);
+      toast.error("Failed to publish!");
     } finally {
       setIsSubmitting(false);
     }
   };
-  
+
   if (!user || user.role !== 'admin') {
     return null;
   }
@@ -56,7 +83,6 @@ const CreateBlog = () => {
       <Navbar />
       <div className="pt-32 px-4 sm:px-6 lg:px-8 max-w-3xl mx-auto pb-16">
         <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8">Create New Blog Post</h1>
-        
         <Card className="dark:bg-gray-800">
           <form onSubmit={handleSubmit}>
             <CardHeader>
@@ -77,7 +103,6 @@ const CreateBlog = () => {
                   className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
                 />
               </div>
-              
               <div className="space-y-2">
                 <Label htmlFor="content" className="dark:text-white">Content</Label>
                 <Textarea
@@ -89,24 +114,21 @@ const CreateBlog = () => {
                   required
                 />
               </div>
-              
               <div className="space-y-2">
-                <Label htmlFor="imageUrl" className="dark:text-white">Image URL</Label>
-                <Input
-                  id="imageUrl"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="Enter image URL"
-                  className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                <Label htmlFor="blog-image" className="dark:text-white">Blog Banner/Thumbnail Image</Label>
+                <ApplyResumeUpload
+                  accept="image/jpeg,image/png,image/webp"
+                  maxSizeMB={5}
+                  onChange={handleImageChange}
+                  required
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Use a Synjoint image or upload your own. Default image will be used if left empty.
+                  JPG, PNG, or WebP. Max size: 5MB.
                 </p>
               </div>
-              
               <div className="border rounded-md p-4 dark:border-gray-700">
                 <p className="text-sm font-medium mb-2 dark:text-white">Preview Image</p>
-                <div className="h-48 overflow-hidden rounded-md bg-gray-100 dark:bg-gray-700">
+                <div className="h-48 overflow-hidden rounded-md bg-gray-100 dark:bg-gray-700 flex justify-center items-center">
                   {imageUrl ? (
                     <img 
                       src={imageUrl} 

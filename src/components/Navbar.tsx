@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X, Search, User, LogOut, FileText, Briefcase, ChevronDown } from "lucide-react";
@@ -22,18 +21,29 @@ const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const [searchTerm, setSearchTerm] = useState("");
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const sectionRefs = {
+    about: useRef<null | HTMLAnchorElement>(null),
+    products: useRef<null | HTMLAnchorElement>(null),
+    stakeholders: useRef<null | HTMLAnchorElement>(null),
+    contact: useRef<null | HTMLAnchorElement>(null),
+  };
+
+  const [logoTextColor, setLogoTextColor] = useState("#2563eb");
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
+      setLogoTextColor(window.scrollY > 20 ? "#fff" : "#2563eb");
     };
-    
     window.addEventListener("scroll", handleScroll);
-    
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   useEffect(() => {
-    // Close mobile menu when user clicks outside
     const handleOutsideClick = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsMobileMenuOpen(false);
@@ -50,18 +60,77 @@ const Navbar = () => {
   const languages = ["English", "Hindi", "Spanish"];
 
   const menuItems = [
-    { name: "About Us", href: "/about" },
-    { name: "Our Stakeholders", href: "/stakeholders" },
-    { name: "Products", href: "/products" },
+    { name: "About Us", href: "/about", ref: sectionRefs.about },
+    { name: "Our Stakeholders", href: "/stakeholders", ref: sectionRefs.stakeholders },
+    { name: "Products", href: "/products", ref: sectionRefs.products },
     { name: "Meril Academy", href: "/academy" },
     { name: "Blogs", href: "/blogs" },
     { name: "Careers", href: "/careers" },
-    { name: "Contact Us", href: "/contact" },
+    { name: "Contact Us", href: "/contact", ref: sectionRefs.contact }
   ];
+
+  const suggestionKeywords = [
+    { label: "Products", keywords: ["product", "products", "prod"], target: "/products" },
+    { label: "About Us", keywords: ["about", "company", "who"], target: "/about" },
+    { label: "Contact Us", keywords: ["contact", "get in touch"], target: "/contact" },
+    { label: "Careers", keywords: ["career", "careers", "job", "jobs", "apply"], target: "/careers" },
+    { label: "Blogs", keywords: ["blog", "blogs", "news"], target: "/blogs" },
+    { label: "Susheel (Leadership)", keywords: ["susheel", "dr. susheel"], target: "/stakeholders#susheel" }
+  ];
+
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setSuggestions([]);
+      return;
+    }
+    const val = searchTerm.toLowerCase();
+    const relevant = suggestionKeywords.filter(s =>
+      s.keywords.some(kw => val.includes(kw))
+    );
+    setSuggestions(relevant.map(s => s.label));
+  }, [searchTerm]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const val = searchTerm.trim().toLowerCase();
+    if (!val) return;
+
+    const first = suggestionKeywords.find(s =>
+      s.keywords.some(kw => val.includes(kw))
+    );
+    if (first) {
+      if (first.target.startsWith("/")) {
+        window.location.href = first.target;
+      } else if (first.target.startsWith("#") && sectionRefs[first.target.substring(1)]) {
+        sectionRefs[first.target.substring(1)]?.current?.scrollIntoView({ behavior: "smooth" });
+      } else {
+        window.location.href = "/";
+      }
+      setShowSuggestions(false);
+      setSearchTerm("");
+      return;
+    }
+    setSuggestions([]);
+    setShowSuggestions(true);
+  };
+
+  const handleSuggestionClick = (label: string) => {
+    const found = suggestionKeywords.find(item => item.label === label);
+    if (found) {
+      if (found.target.startsWith("/")) {
+        window.location.href = found.target;
+      } else if (found.target.startsWith("#") && sectionRefs[found.target.substring(1)]) {
+        sectionRefs[found.target.substring(1)]?.current?.scrollIntoView({ behavior: "smooth" });
+      } else {
+        window.location.href = "/";
+      }
+    }
+    setShowSuggestions(false);
+    setSearchTerm("");
+  };
 
   return (
     <div className="sticky top-0 z-50 w-full shadow-sm">
-      {/* Top Bar */}
       <div className="bg-synjoint-blue text-white py-2 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <div className="hidden md:flex space-x-4 text-sm">
@@ -85,12 +154,37 @@ const Navbar = () => {
               </select>
             </div>
             <div className="relative hidden md:block">
-              <input
-                type="text"
-                placeholder="Search Here"
-                className="py-1 px-3 pr-10 rounded-md text-gray-900 text-sm w-48 transition-all focus:w-56 focus:ring-2 focus:ring-white/20 focus:outline-none"
-              />
-              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
+              <form onSubmit={handleSearch}>
+                <input
+                  type="text"
+                  placeholder="Search Here"
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setShowSuggestions(true);
+                  }}
+                  className="py-1 px-3 pr-10 rounded-md text-gray-900 text-sm w-48 transition-all focus:w-56 focus:ring-2 focus:ring-white/20 focus:outline-none"
+                  onFocus={() => setShowSuggestions(true)}
+                />
+                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
+                {showSuggestions && searchTerm && (
+                  <div className="absolute left-0 z-50 mt-1 bg-white dark:bg-gray-800 rounded shadow-lg w-full border border-gray-200 dark:border-gray-700 max-h-48 overflow-auto text-sm">
+                    {suggestions.length > 0 ? (
+                      suggestions.map((sugg) => (
+                        <div
+                          key={sugg}
+                          className="px-4 py-2 cursor-pointer hover:bg-synjoint-blue hover:text-white"
+                          onClick={() => handleSuggestionClick(sugg)}
+                        >
+                          {sugg}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-4 py-2 text-gray-400">No result found</div>
+                    )}
+                  </div>
+                )}
+              </form>
             </div>
             
             {isAuthenticated ? (
@@ -160,7 +254,6 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Main Navigation */}
       <motion.nav
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -178,10 +271,18 @@ const Navbar = () => {
                   alt="Synjoint Logo"
                   className="h-12 w-auto"
                 />
+                <span
+                  className="font-bold text-xl ml-2 transition-colors duration-300 hidden sm:inline"
+                  style={{
+                    color: logoTextColor,
+                    letterSpacing: "1px"
+                  }}
+                >
+                  SYNJOINT Tech
+                </span>
               </Link>
             </div>
             
-            {/* Desktop Menu */}
             <div className="hidden md:flex md:items-center md:space-x-6">
               {menuItems.map((item) => (
                 <Link
@@ -194,7 +295,6 @@ const Navbar = () => {
               ))}
             </div>
 
-            {/* Mobile Menu Button */}
             <div className="md:hidden">
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -207,7 +307,6 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Mobile Menu */}
         {isMobileMenuOpen && (
           <div 
             ref={dropdownRef}
@@ -231,7 +330,6 @@ const Navbar = () => {
                 </Link>
               ))}
               
-              {/* Mobile search */}
               <div className="p-3">
                 <div className="relative">
                   <input
@@ -243,7 +341,6 @@ const Navbar = () => {
                 </div>
               </div>
               
-              {/* Language selector for mobile */}
               <div className="p-3 border-t border-gray-200 dark:border-gray-700">
                 <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Language</label>
                 <select
@@ -259,7 +356,6 @@ const Navbar = () => {
                 </select>
               </div>
               
-              {/* Auth options for mobile */}
               <div className="p-3 border-t border-gray-200 dark:border-gray-700">
                 {!isAuthenticated ? (
                   <Link
