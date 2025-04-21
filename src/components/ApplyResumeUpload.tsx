@@ -1,8 +1,6 @@
 
 import React, { useRef } from "react";
 import { Upload } from "lucide-react";
-// For images: accept="image/jpeg,image/png,image/webp"
-// For resume: accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
 interface ApplyResumeUploadProps {
   accept: string;
@@ -18,20 +16,40 @@ const ApplyResumeUpload: React.FC<ApplyResumeUploadProps> = ({ accept, maxSizeMB
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      // Validate type
-      if (accept && !accept.split(',').some(type => file.type.includes(type.split('/')[1]))) {
-        alert("Invalid file type.");
+      
+      // Validate file type properly
+      let validType = false;
+      const acceptTypes = accept.split(',');
+      
+      for (const type of acceptTypes) {
+        // Handle image types (e.g., image/jpeg)
+        if (type.includes('image/') && file.type.startsWith('image/')) {
+          validType = true;
+          break;
+        }
+        // Handle document types (application/pdf, etc)
+        else if (type.includes('application/') && file.type.includes('application/')) {
+          validType = true;
+          break;
+        }
+      }
+      
+      if (!validType) {
+        alert("Invalid file type. Please upload a file that matches the accepted formats.");
         return;
       }
+      
       // Validate size
       if (file.size > maxSizeMB * 1024 * 1024) {
         alert(`File exceeds ${maxSizeMB}MB limit.`);
         return;
       }
+      
       setFileName(file.name);
       onChange(file);
     }
   };
+  
   return (
     <div>
       <button
@@ -54,4 +72,5 @@ const ApplyResumeUpload: React.FC<ApplyResumeUploadProps> = ({ accept, maxSizeMB
     </div>
   );
 };
+
 export default ApplyResumeUpload;

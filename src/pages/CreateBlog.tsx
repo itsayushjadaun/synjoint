@@ -32,13 +32,23 @@ const CreateBlog = () => {
   };
 
   const uploadImageToSupabase = async (file: File): Promise<string> => {
-    const { supabase } = await import("@/utils/supabase");
-    const bucket = "blog-images";
-    const ext = file.name.split(".").pop();
-    const filePath = `blog_${Date.now()}.${ext}`;
-    const { data, error } = await supabase.storage.from(bucket).upload(filePath, file);
-    if (error) throw error;
-    return supabase.storage.from(bucket).getPublicUrl(filePath).data.publicUrl;
+    try {
+      const { supabase } = await import("@/utils/supabase");
+      const bucket = "blog-images";
+      const ext = file.name.split(".").pop();
+      const filePath = `blog_${Date.now()}.${ext}`;
+      const { data, error } = await supabase.storage.from(bucket).upload(filePath, file);
+      
+      if (error) {
+        console.error("Supabase storage upload error:", error);
+        throw error;
+      }
+      
+      return supabase.storage.from(bucket).getPublicUrl(filePath).data.publicUrl;
+    } catch (error) {
+      console.error("Image upload error:", error);
+      throw error;
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -54,6 +64,7 @@ const CreateBlog = () => {
       try {
         url = await uploadImageToSupabase(imageFile);
       } catch (imgError) {
+        console.error("Image upload error details:", imgError);
         toast.error("Image upload failed, please try again.");
         setIsSubmitting(false);
         return;

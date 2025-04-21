@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,13 +46,23 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
   const handleFileChange = (file: File) => setResumeFile(file);
 
   const uploadResumeToSupabase = async (file: File) => {
-    const { supabase } = await import("@/utils/supabase");
-    const bucket = "career-resumes";
-    const ext = file.name.split('.').pop();
-    const filePath = `resume_${Date.now()}_${file.name}`;
-    const { data, error } = await supabase.storage.from(bucket).upload(filePath, file);
-    if (error) throw error;
-    return supabase.storage.from(bucket).getPublicUrl(filePath).data.publicUrl;
+    try {
+      const { supabase } = await import("@/utils/supabase");
+      const bucket = "career-resumes";
+      const ext = file.name.split('.').pop();
+      const filePath = `resume_${Date.now()}_${file.name}`;
+      const { data, error } = await supabase.storage.from(bucket).upload(filePath, file);
+      
+      if (error) {
+        console.error("Resume upload error:", error);
+        throw error;
+      }
+      
+      return supabase.storage.from(bucket).getPublicUrl(filePath).data.publicUrl;
+    } catch (error) {
+      console.error("Resume upload error details:", error);
+      throw error;
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -72,6 +83,7 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
       try {
         resumeUrl = await uploadResumeToSupabase(resumeFile);
       } catch (fileErr) {
+        console.error("Resume upload failed:", fileErr);
         toast({
           title: "Resume upload failed",
           description: "Please check your file and try again.",
@@ -80,6 +92,7 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
         setIsSubmitting(false);
         return;
       }
+      
       // Call the Supabase Edge Function
       const { data, error } = await supabase.functions.invoke('career-apply', {
         body: JSON.stringify({
@@ -160,71 +173,78 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
               Apply Now
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Apply for {title}</DialogTitle>
               <DialogDescription>
-                Fill out the form below to apply for this position. We'll get back to you soon.
+                Fill out the form below to apply for this position.
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-              <div className="space-y-2">
+            <form onSubmit={handleSubmit} className="space-y-3 pt-3">
+              <div>
                 <Label htmlFor="name">Full Name <span className="text-red-500">*</span></Label>
                 <Input
                   id="name"
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
+                  className="mt-1"
                   required
                 />
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="mt-1"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className="mt-1"
+                  />
+                </div>
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={handleChange}
-                />
-              </div>
-              
-              <div className="space-y-2">
+              <div>
                 <Label htmlFor="message">Cover Letter/Message <span className="text-red-500">*</span></Label>
                 <textarea
                   id="message"
                   name="message"
-                  className="w-full rounded-md border border-gray-300 p-2 min-h-[100px] dark:bg-gray-800 dark:border-gray-600"
+                  className="w-full rounded-md border border-gray-300 p-2 min-h-[80px] mt-1 dark:bg-gray-800 dark:border-gray-600"
                   value={formData.message}
                   onChange={handleChange}
                   required
                 ></textarea>
               </div>
               
-              <div className="space-y-2">
+              <div>
                 <Label htmlFor="resume_file">Resume (PDF or DOC) <span className="text-red-500">*</span></Label>
-                <ApplyResumeUpload
-                  accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                  maxSizeMB={5}
-                  onChange={handleFileChange}
-                  required
-                />
+                <div className="mt-1">
+                  <ApplyResumeUpload
+                    accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    maxSizeMB={5}
+                    onChange={handleFileChange}
+                    required
+                  />
+                </div>
               </div>
               
-              <div className="flex justify-end space-x-4 pt-4">
+              <div className="flex justify-end space-x-3 pt-3">
                 <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
                   Cancel
                 </Button>
@@ -234,7 +254,7 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
                       <div className="animate-spin mr-2 h-4 w-4 border-b-2 rounded-full border-white"></div>
                       <span>Submitting...</span>
                     </div>
-                  ) : "Submit Application"}
+                  ) : "Submit"}
                 </Button>
               </div>
             </form>
