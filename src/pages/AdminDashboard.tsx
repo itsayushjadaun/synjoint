@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -11,32 +10,46 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
 import { sendWhatsAppMessage } from "@/utils/whatsapp";
-
-// Use direct supabase client import to avoid type issues
 import { supabase } from "@/integrations/supabase/client";
+
+type JobApplication = {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  position: string;
+  message: string;
+  resume_url?: string;
+  status: string;
+  created_at: string;
+};
+
+type ContactMessage = {
+  id: string;
+  name: string;
+  email: string;
+  message: string;
+  created_at: string;
+};
 
 const AdminDashboard = () => {
   const { user, blogs, careers } = useAuth();
   const navigate = useNavigate();
   
-  const [applications, setApplications] = useState([]);
-  const [contactMessages, setContactMessages] = useState([]);
+  const [applications, setApplications] = useState<JobApplication[]>([]);
+  const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    // Redirect if not admin
     if (!user || user.role !== 'admin') {
       navigate('/');
     } else {
-      // Fetch job applications and contact messages
       const fetchData = async () => {
         setLoading(true);
         
         try {
-          // Fetch job applications with real-time updates
-          // Using any type to bypass type checking for now
           const { data: appData, error: appError } = await supabase
-            .from('job_applications')
+            .from('job_applications' as const)
             .select('*')
             .order('created_at', { ascending: false });
             
@@ -44,7 +57,6 @@ const AdminDashboard = () => {
           console.log("Fetched job applications:", appData);
           setApplications(appData || []);
           
-          // Subscribe to real-time updates for job applications
           const appChannel = supabase
             .channel('public:job_applications')
             .on('postgres_changes', { 
@@ -53,21 +65,18 @@ const AdminDashboard = () => {
               table: 'job_applications' 
             }, payload => {
               console.log('Real-time update for job applications:', payload);
-              // Reload applications when changes occur
               fetchJobApplications();
             })
             .subscribe();
             
-          // Fetch contact messages
           const { data: contactData, error: contactError } = await supabase
-            .from('contacts')
+            .from('contacts' as const)
             .select('*')
             .order('created_at', { ascending: false });
             
           if (contactError) throw contactError;
           setContactMessages(contactData || []);
           
-          // Subscribe to real-time updates for contact messages
           const contactChannel = supabase
             .channel('public:contacts')
             .on('postgres_changes', { 
@@ -76,7 +85,6 @@ const AdminDashboard = () => {
               table: 'contacts' 
             }, payload => {
               console.log('Real-time update for contact messages:', payload);
-              // Reload contact messages when changes occur
               fetchContactMessages();
             })
             .subscribe();
@@ -94,23 +102,23 @@ const AdminDashboard = () => {
       
       const fetchJobApplications = async () => {
         const { data, error } = await supabase
-          .from('job_applications')
+          .from('job_applications' as const)
           .select('*')
           .order('created_at', { ascending: false });
           
-        if (!error) {
-          setApplications(data || []);
+        if (!error && data) {
+          setApplications(data);
         }
       };
       
       const fetchContactMessages = async () => {
         const { data, error } = await supabase
-          .from('contacts')
+          .from('contacts' as const)
           .select('*')
           .order('created_at', { ascending: false });
           
-        if (!error) {
-          setContactMessages(data || []);
+        if (!error && data) {
+          setContactMessages(data);
         }
       };
       
@@ -118,7 +126,7 @@ const AdminDashboard = () => {
     }
   }, [user, navigate]);
   
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status: string) => {
     switch(status) {
       case 'new':
         return <Badge className="bg-blue-500">New</Badge>;
@@ -135,19 +143,17 @@ const AdminDashboard = () => {
     }
   };
   
-  const updateApplicationStatus = async (id, newStatus) => {
+  const updateApplicationStatus = async (id: string, newStatus: string) => {
     try {
-      // Using any type to bypass type checking for now
       const { error } = await supabase
-        .from('job_applications')
+        .from('job_applications' as const)
         .update({ status: newStatus })
         .eq('id', id);
         
       if (error) throw error;
       
-      // Refresh applications after update
       const { data } = await supabase
-        .from('job_applications')
+        .from('job_applications' as const)
         .select('*')
         .order('created_at', { ascending: false });
         
