@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -28,6 +29,7 @@ type ContactMessage = {
   id: string;
   name: string;
   email: string;
+  phone?: string; // Add phone field as optional since it might not exist in all records
   message: string;
   created_at: string;
 };
@@ -274,29 +276,33 @@ const AdminDashboard = () => {
                   {[...blogs, ...careers, ...applications.slice(0, 3)]
                     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
                     .slice(0, 5)
-                    .map((item) => (
-                      <div key={item.id} className="flex items-center pb-4 border-b">
-                        {'content' in item ? (
-                          <FileText className="h-5 w-5 text-synjoint-blue mr-3" />
-                        ) : 'requirements' in item ? (
-                          <Briefcase className="h-5 w-5 text-synjoint-blue mr-3" />
-                        ) : (
-                          <Users className="h-5 w-5 text-synjoint-blue mr-3" />
-                        )}
-                        <div>
-                          <p className="font-medium">
-                            {'title' in item ? item.title : 'position' in item ? `Application: ${item.position}` : item.name}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {new Date(item.created_at).toLocaleDateString('en-US', {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric'
-                            })}
-                          </p>
+                    .map((item) => {
+                      // Properly type the item to avoid 'property name does not exist on type never'
+                      const typedItem = item as any; // Using any here as a temporary solution to avoid the type error
+                      return (
+                        <div key={typedItem.id} className="flex items-center pb-4 border-b">
+                          {'content' in typedItem ? (
+                            <FileText className="h-5 w-5 text-synjoint-blue mr-3" />
+                          ) : 'requirements' in typedItem ? (
+                            <Briefcase className="h-5 w-5 text-synjoint-blue mr-3" />
+                          ) : (
+                            <Users className="h-5 w-5 text-synjoint-blue mr-3" />
+                          )}
+                          <div>
+                            <p className="font-medium">
+                              {'title' in typedItem ? typedItem.title : 'position' in typedItem ? `Application: ${typedItem.position}` : typedItem.name}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {new Date(typedItem.created_at).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   
                   {[...blogs, ...careers, ...applications].length === 0 && (
                     <div className="text-center py-4">
@@ -489,7 +495,9 @@ const AdminDashboard = () => {
                           {msg.phone && (
                             <p className="flex items-center text-sm">
                               <Phone className="h-4 w-4 mr-2 text-gray-400" />
-                              {msg.phone}
+                              <a href={`tel:${msg.phone}`} className="text-synjoint-blue hover:underline">
+                                {msg.phone}
+                              </a>
                             </p>
                           )}
                         </div>
