@@ -55,13 +55,12 @@ const AuthCallback = () => {
           throw sessionError;
         }
         
-        if (data.session) {
+        if (data?.session) {
           const user = data.session.user;
           console.log("Session user found:", user);
           setStatus('Creating your user profile...');
           
-          // CRITICAL: Always ensure user record exists in users table
-          // Try multiple times with different approaches if needed
+          // Ensure user record exists in users table
           let userCreated = false;
           let attempts = 0;
           
@@ -130,7 +129,7 @@ const AuthCallback = () => {
           
           // Create new user record with multiple fallback approaches
           try {
-            // Get user info from Google metadata
+            // Get user info from metadata
             const name = user.user_metadata?.name || 
                          user.user_metadata?.full_name || 
                          user.email?.split('@')[0] || 
@@ -141,7 +140,7 @@ const AuthCallback = () => {
             
             console.log("Creating user with data:", { name, email, picture, role });
             
-            // Approach 1: Create user with comprehensive data
+            // Create user with comprehensive data
             const userData = {
               id: user.id,
               email: email,
@@ -159,7 +158,7 @@ const AuthCallback = () => {
             if (insertError) {
               console.error('Error creating user record:', insertError);
               
-              // Approach 2: Try minimal required fields approach
+              // Try minimal required fields approach
               console.log("Trying minimal user record creation");
               const { error: minimalInsertError } = await supabase
                 .from('users')
@@ -173,7 +172,7 @@ const AuthCallback = () => {
               if (minimalInsertError) {
                 console.error('Minimal insert also failed:', minimalInsertError);
                 
-                // Approach 3: Try upsert approach as a last resort
+                // Try upsert approach as a last resort
                 console.log("Trying upsert approach");
                 const { error: upsertError } = await supabase
                   .from('users')
@@ -208,7 +207,7 @@ const AuthCallback = () => {
           }
         } else {
           console.log("User already exists in users table, updating count and picture if needed");
-          // Update existing user's count and picture if available from Google
+          // Update existing user's count and picture if available
           const { error: updateError } = await supabase
             .from('users')
             .update({ 
@@ -238,8 +237,8 @@ const AuthCallback = () => {
   }, [navigate, location]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <div className="text-center p-8 bg-white rounded-lg shadow-md max-w-md w-full">
+    <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="text-center p-8 bg-white rounded-lg shadow-md max-w-md w-full dark:bg-gray-800 dark:text-white">
         <h2 className="text-2xl font-semibold mb-4">
           {isProcessing ? status : "Processing complete"}
         </h2>
@@ -249,7 +248,7 @@ const AuthCallback = () => {
           </div>
         )}
         {!isProcessing && status.includes('complete') && (
-          <p className="mt-4 text-green-600">Your account is ready! Redirecting you to the home page...</p>
+          <p className="mt-4 text-green-600 dark:text-green-400">Your account is ready! Redirecting you to the home page...</p>
         )}
         {!isProcessing && !status.includes('complete') && (
           <div>

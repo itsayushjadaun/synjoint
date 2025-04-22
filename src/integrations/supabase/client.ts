@@ -6,13 +6,13 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://pdxezczxwgkasisatbwe.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBkeGV6Y3p4d2drYXNpc2F0YndlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDExODkxMzUsImV4cCI6MjA1Njc2NTEzNX0.ouMcENoGkYkZG69NqphHRp9iaGLrVW28Mbjm5SdiJ6Y";
 
-// Import the supabase client like this:
-// import { supabase } from "@/integrations/supabase/client";
-
+// Create a single Supabase client instance to be used throughout the app
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    storageKey: 'synjoint-auth-token'
+    storageKey: 'synjoint-auth-token',
+    detectSessionInUrl: true, // Help detect OAuth session in the URL
+    flowType: 'pkce' // Use PKCE flow for better security
   }
 });

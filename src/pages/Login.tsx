@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
@@ -15,19 +16,13 @@ const Login = () => {
   const { login, signup, isLoading: authIsLoading, googleLogin, user } = useAuth();
   const navigate = useNavigate();
 
-  // Check authentication state
-  useEffect(() => {
-    if (user) {
-      console.log("User is already logged in, redirecting to home page", user);
-      const redirectUrl = user.role === 'admin' ? '/admin' : '/';
-      navigate(redirectUrl); // Redirect based on role
-    }
-  }, [user, navigate]);
-
+  // State to track independent login/signup form loading status
+  const [loginIsLoading, setLoginIsLoading] = useState(false);
+  const [signupIsLoading, setSignupIsLoading] = useState(false);
+  
   // Login form state
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
-  const [loginIsLoading, setLoginIsLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
   // Signup form state
@@ -35,9 +30,17 @@ const Login = () => {
   const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
-  const [signupIsLoading, setSignupIsLoading] = useState(false);
   const [signupError, setSignupError] = useState<string | null>(null);
   const [signupComplete, setSignupComplete] = useState(false);
+
+  // Check authentication state
+  useEffect(() => {
+    if (user) {
+      console.log("User is already logged in, redirecting", user);
+      const redirectUrl = user.role === 'admin' ? '/admin' : '/';
+      navigate(redirectUrl);
+    }
+  }, [user, navigate]);
 
   // Email validation function
   const isValidEmail = (email: string) => {
@@ -67,12 +70,11 @@ const Login = () => {
     try {
       console.log(`Attempting to login with email: ${loginEmail}`);
       await login(loginEmail, loginPassword);
-      // If login is successful, user state will be updated and the useEffect will redirect
+      // After login, the AuthContext will handle the redirect
     } catch (error: any) {
       console.error("Login error:", error);
       let errorMessage = error.message || "Invalid credentials. Please try again.";
       
-      // Check for email not confirmed error
       if (errorMessage.includes("Email not confirmed") || 
           errorMessage.includes("not confirmed") || 
           errorMessage.includes("verification")) {
@@ -146,6 +148,7 @@ const Login = () => {
     }
   };
 
+  // If signup is complete, show confirmation message
   if (signupComplete) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -244,9 +247,9 @@ const Login = () => {
                   <Button 
                     type="submit" 
                     className="w-full bg-synjoint-blue hover:bg-synjoint-blue/90 dark:bg-blue-600 dark:hover:bg-blue-700 relative z-50"
-                    disabled={loginIsLoading || authIsLoading}
+                    disabled={loginIsLoading}
                   >
-                    {loginIsLoading || authIsLoading ? (
+                    {loginIsLoading ? (
                       <div className="flex items-center">
                         <div className="animate-spin mr-2 h-4 w-4 border-b-2 rounded-full border-white"></div>
                         <span>Signing in...</span>

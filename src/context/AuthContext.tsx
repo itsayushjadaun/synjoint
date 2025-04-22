@@ -2,8 +2,8 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
-import { supabase, authAPI, blogAPI, careerAPI } from '../utils/supabase';
-import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '../utils/supabase';
+import { User } from '@supabase/supabase-js';
 
 interface AuthUser {
   id: string;
@@ -80,13 +80,66 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setDarkMode(prev => !prev);
   };
 
+  // Simplified initialization for more reliability
   useEffect(() => {
-    const initializeData = async () => {
+    const initializeAuth = async () => {
       try {
         setIsLoading(true);
         
-        // Get the current session directly from supabase
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        // Set up the auth state change listener
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          (event, session) => {
+            console.log("Auth state changed:", event, session);
+            
+            if (session?.user) {
+              // Use setTimeout to prevent possible deadlocks
+              setTimeout(async () => {
+                try {
+                  const { data: userData, error: userError } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('id', session.user.id)
+                    .maybeSingle();
+                    
+                  if (userError) {
+                    console.error('Error fetching user data:', userError);
+                    return;
+                  }
+                  
+                  setUser({
+                    id: session.user.id,
+                    email: session.user.email || '',
+                    name: session.user.user_metadata?.name || 
+                          userData?.name || 
+                          session.user.email?.split('@')[0] || 
+                          'User',
+                    role: userData?.role || 
+                          (session.user.email?.endsWith('@synjoint.com') ? 'admin' : 'user'),
+                    picture: session.user.user_metadata?.avatar_url || userData?.picture,
+                    count: userData?.count || 1,
+                    profile: userData
+                  });
+                  
+                  if (event === 'SIGNED_IN') {
+                    toast.success('Signed in successfully!');
+                  } else if (event === 'USER_UPDATED' && session.user.email_confirmed_at) {
+                    toast.success('Email confirmed successfully!');
+                  }
+                  
+                  await refreshBlogs();
+                  await refreshCareers();
+                } catch (error) {
+                  console.error('Error handling auth state change:', error);
+                }
+              }, 0);
+            } else if (event === 'SIGNED_OUT') {
+              setUser(null);
+            }
+          }
+        );
+        
+        // Get the current session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
           console.error('Error getting session:', sessionError);
@@ -94,96 +147,55 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           return;
         }
         
-        if (sessionData?.session) {
-          console.log('Session found:', sessionData.session);
-          const { user: currentUser } = await authAPI.getCurrentUser();
-          
-          if (currentUser) {
-            setUser({
-              id: currentUser.id,
-              email: currentUser.email || '',
-              name: currentUser.user_metadata?.name || currentUser.profile?.name || currentUser.email?.split('@')[0] || 'User',
-              role: currentUser.profile?.role || (currentUser.email?.endsWith('@synjoint.com') ? 'admin' : 'user'),
-              picture: currentUser.user_metadata?.avatar_url || currentUser.profile?.picture,
-              count: currentUser.profile?.count || 1
-            });
+        if (session?.user) {
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .maybeSingle();
+            
+          if (userError) {
+            console.error('Error fetching user data:', userError);
           }
+          
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            name: session.user.user_metadata?.name || 
+                  userData?.name || 
+                  session.user.email?.split('@')[0] || 
+                  'User',
+            role: userData?.role || 
+                  (session.user.email?.endsWith('@synjoint.com') ? 'admin' : 'user'),
+            picture: session.user.user_metadata?.avatar_url || userData?.picture,
+            count: userData?.count || 1,
+            profile: userData
+          });
         }
         
         await refreshBlogs();
         await refreshCareers();
       } catch (error) {
-        console.error('Error initializing data:', error);
-        toast.error('There was an error loading data');
+        console.error('Error initializing auth:', error);
       } finally {
         setIsLoading(false);
       }
     };
     
-    // Set up the auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log("Auth state changed:", event, session);
-        if (event === 'SIGNED_IN' && session?.user) {
-          try {
-            // Handle sign-in event
-            const { user: currentUser } = await authAPI.getCurrentUser();
-            if (currentUser) {
-              setUser({
-                id: currentUser.id,
-                email: currentUser.email || '',
-                name: currentUser.user_metadata?.name || currentUser.profile?.name || currentUser.email?.split('@')[0] || 'User',
-                role: currentUser.profile?.role || (currentUser.email?.endsWith('@synjoint.com') ? 'admin' : 'user'),
-                picture: currentUser.user_metadata?.avatar_url || currentUser.profile?.picture,
-                count: currentUser.profile?.count || 1
-              });
-              
-              await refreshBlogs();
-              await refreshCareers();
-            }
-          } catch (error) {
-            console.error('Error handling sign-in:', error);
-          }
-        } else if (event === 'SIGNED_OUT') {
-          // Handle sign-out event
-          setUser(null);
-        } else if (event === 'USER_UPDATED') {
-          // Handle user update event
-          if (session?.user) {
-            try {
-              const { user: currentUser } = await authAPI.getCurrentUser();
-              if (currentUser) {
-                setUser({
-                  id: currentUser.id,
-                  email: currentUser.email || '',
-                  name: currentUser.user_metadata?.name || currentUser.profile?.name || currentUser.email?.split('@')[0] || 'User',
-                  role: currentUser.profile?.role || (currentUser.email?.endsWith('@synjoint.com') ? 'admin' : 'user'),
-                  picture: currentUser.user_metadata?.avatar_url || currentUser.profile?.picture,
-                  count: currentUser.profile?.count || 1
-                });
-                
-                if (currentUser.email_confirmed_at) {
-                  toast.success("Email confirmed successfully!");
-                }
-              }
-            } catch (error) {
-              console.error('Error handling user update:', error);
-            }
-          }
-        }
-      }
-    );
-    
-    initializeData();
+    initializeAuth();
     
     return () => {
-      subscription.unsubscribe();
+      // Cleanup will be handled by the subscription.unsubscribe() in the onAuthStateChange return
     };
   }, []);
 
   const refreshBlogs = async () => {
     try {
-      const { data, error } = await blogAPI.getAll();
+      const { data, error } = await supabase
+        .from('blogs')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
       if (error) throw error;
       
       if (data) {
@@ -197,7 +209,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const refreshCareers = async () => {
     try {
-      const { data, error } = await careerAPI.getAll();
+      const { data, error } = await supabase
+        .from('careers')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
       if (error) throw error;
       
       if (data) {
@@ -210,11 +226,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const login = async (email: string, password: string) => {
-    setIsLoading(true);
     try {
       console.log("Attempting login for:", email);
       
-      // Use the supabase client directly for more reliable authentication
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -223,40 +237,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) {
         console.error("Login error:", error);
         
-        if (error.message && error.message.toLowerCase().includes("email") && error.message.toLowerCase().includes("confirm")) {
+        if (error.message && error.message.toLowerCase().includes("email") && 
+            error.message.toLowerCase().includes("confirm")) {
           toast.error("Please confirm your email before logging in. Check your inbox (and spam folder).");
-          setIsLoading(false);
-          return;
+          throw error;
         }
         
-        toast.error(error.message || "Invalid credentials. Please check your email and password.");
-        setIsLoading(false);
-        return;
+        throw error;
       }
       
-      if (data?.user) {
-        console.log("Login successful, user:", data.user);
-        toast.success("Login successful!");
-        // The auth state change listener will handle setting the user
-      }
+      // Auth state change listener will handle setting the user
+      return data;
     } catch (error: any) {
       console.error("Login error:", error);
-      toast.error(error.message || "Login failed. Please try again.");
-    } finally {
-      setIsLoading(false);
+      throw error;
     }
   };
 
   const signup = async (name: string, email: string, password: string) => {
-    setIsLoading(true);
     try {
       console.log("Attempting signup for:", email);
-      const { data, error } = await authAPI.signUp(email, password, name);
+      
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+            role: email.endsWith('@synjoint.com') ? 'admin' : 'user',
+          },
+          emailRedirectTo: `${window.location.origin}/auth/callback?type=signup`
+        }
+      });
       
       if (error) {
         console.error("Signup error:", error);
-        toast.error(error.message || "Signup failed. Please try again.");
-        setIsLoading(false);
         return { data: null, error };
       }
       
@@ -268,40 +283,49 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { data, error: null };
     } catch (error: any) {
       console.error("Signup error:", error);
-      toast.error(error.message || "Signup failed. Please try again.");
       return { data: null, error };
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const googleLogin = async () => {
     try {
       console.log("Attempting Google login");
-      const { data, error } = await authAPI.signInWithGoogle();
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback?provider=google`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
+        }
+      });
       
       if (error) {
         console.error("Google login error:", error);
         toast.error(error.message || "Google login failed. Please try again.");
-        return;
+        throw error;
       }
       
-      // The redirect to the provider's login page happens automatically
+      // The redirect happens automatically
     } catch (error: any) {
       console.error("Google login error:", error);
       toast.error(error.message || "Google login failed. Please try again.");
+      throw error;
     }
   };
 
   const logout = async () => {
+    setIsLoading(true);
     try {
       console.log("Attempting logout");
-      const { error } = await authAPI.signOut();
+      const { error } = await supabase.auth.signOut();
       
       if (error) {
         console.error("Logout error:", error);
         toast.error(error.message || "Logout failed. Please try again.");
-        return;
+        throw error;
       }
       
       setUser(null);
@@ -310,6 +334,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error: any) {
       console.error("Logout error:", error);
       toast.error(error.message || "Logout failed. Please try again.");
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -320,11 +347,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     
     try {
-      const { data, error } = await blogAPI.add({
-        title: blog.title,
-        content: blog.content,
-        image_url: blog.image_url || '/lovable-uploads/cef8ce24-f36c-4060-8c3e-41ce14874770.png'
-      });
+      const { data, error } = await supabase
+        .from('blogs')
+        .insert({
+          title: blog.title,
+          content: blog.content,
+          image_url: blog.image_url || '/lovable-uploads/cef8ce24-f36c-4060-8c3e-41ce14874770.png'
+        })
+        .select();
       
       if (error) throw error;
       
@@ -344,12 +374,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     
     try {
-      const { data, error } = await careerAPI.add({
-        title: career.title,
-        description: career.description,
-        requirements: career.requirements,
-        location: career.location
-      });
+      const { data, error } = await supabase
+        .from('careers')
+        .insert({
+          title: career.title,
+          description: career.description,
+          requirements: career.requirements,
+          location: career.location
+        })
+        .select();
       
       if (error) throw error;
       
