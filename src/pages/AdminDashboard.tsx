@@ -10,6 +10,9 @@ import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
+import { sendWhatsAppMessage } from "@/utils/whatsapp";
+
+// Use direct supabase client import to avoid type issues
 import { supabase } from "@/integrations/supabase/client";
 
 const AdminDashboard = () => {
@@ -31,6 +34,7 @@ const AdminDashboard = () => {
         
         try {
           // Fetch job applications with real-time updates
+          // Using any type to bypass type checking for now
           const { data: appData, error: appError } = await supabase
             .from('job_applications')
             .select('*')
@@ -56,7 +60,7 @@ const AdminDashboard = () => {
             
           // Fetch contact messages
           const { data: contactData, error: contactError } = await supabase
-            .from('contact_messages')
+            .from('contacts')
             .select('*')
             .order('created_at', { ascending: false });
             
@@ -65,11 +69,11 @@ const AdminDashboard = () => {
           
           // Subscribe to real-time updates for contact messages
           const contactChannel = supabase
-            .channel('public:contact_messages')
+            .channel('public:contacts')
             .on('postgres_changes', { 
               event: '*', 
               schema: 'public', 
-              table: 'contact_messages' 
+              table: 'contacts' 
             }, payload => {
               console.log('Real-time update for contact messages:', payload);
               // Reload contact messages when changes occur
@@ -101,7 +105,7 @@ const AdminDashboard = () => {
       
       const fetchContactMessages = async () => {
         const { data, error } = await supabase
-          .from('contact_messages')
+          .from('contacts')
           .select('*')
           .order('created_at', { ascending: false });
           
@@ -131,16 +135,32 @@ const AdminDashboard = () => {
     }
   };
   
-  const updateApplicationStatus = async (id, status) => {
+  const updateApplicationStatus = async (id, newStatus) => {
     try {
+      // Using any type to bypass type checking for now
       const { error } = await supabase
         .from('job_applications')
-        .update({ status })
+        .update({ status: newStatus })
         .eq('id', id);
         
       if (error) throw error;
+      
+      // Refresh applications after update
+      const { data } = await supabase
+        .from('job_applications')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
+      if (data) {
+        setApplications(data);
+      }
     } catch (error) {
       console.error("Error updating application status:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update application status",
+        variant: "destructive"
+      });
     }
   };
   
@@ -368,7 +388,7 @@ const AdminDashboard = () => {
                         <div className="mt-4 flex flex-wrap gap-2">
                           <select 
                             className="px-3 py-1 border rounded text-sm"
-                            value={app.status}
+                            value={app.status || 'new'}
                             onChange={(e) => updateApplicationStatus(app.id, e.target.value)}
                           >
                             <option value="new">New</option>
@@ -393,7 +413,7 @@ const AdminDashboard = () => {
                               const msg = `Hello ${app.name}, regarding your application for ${app.position} at Synjoint...`;
                               const phone = app.phone?.replace(/\D/g, '') || '';
                               if (phone) {
-                                window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+                                sendWhatsAppMessage(msg);
                               } else {
                                 toast({
                                   title: "No phone number",
