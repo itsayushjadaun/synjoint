@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { MapPin, Calendar } from "lucide-react";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import ApplyResumeUpload from "./ApplyResumeUpload";
+import ApplyFileUpload from "./ApplyFileUpload";
 import { supabase } from "@/utils/supabase";
 import { sendWhatsAppMessage } from "@/utils/whatsapp";
 
@@ -31,6 +31,7 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const { toast } = useToast();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -50,7 +51,6 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
       const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
       const filePath = `resumes/${fileName}`;
       
-      // Check if bucket exists
       const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
       
       if (bucketError) {
@@ -129,7 +129,7 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
     if (!formData.name || !formData.email || !formData.message || !resumeFile) {
       toast({
         title: "Missing information",
-        description: "Please fill in all required fields, including resume.",
+        description: "Please fill in all required fields.",
         variant: "destructive"
       });
       return;
@@ -139,36 +139,54 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
 
     try {
       let resumeUrl = "";
+      let imageUrl = "";
+
       try {
         resumeUrl = await uploadResumeToSupabase(resumeFile);
+        
+        if (imageFile) {
+          const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}.${imageFile.name.split('.').pop()}`;
+          const filePath = `job-application-images/${fileName}`;
+          
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('job-application-images')
+            .upload(filePath, imageFile, {
+              cacheControl: '3600',
+              upsert: false
+            });
+          
+          if (uploadError) throw uploadError;
+          
+          const { data: urlData } = supabase.storage
+            .from('job-application-images')
+            .getPublicUrl(filePath);
+          
+          imageUrl = urlData.publicUrl;
+        }
       } catch (fileErr) {
-        // Error already handled in uploadResumeToSupabase
         setIsSubmitting(false);
         return;
       }
       
-      // Save application to the database
       const applicationData = {
         ...formData,
         position: title,
-        resume_url: resumeUrl
+        resume_url: resumeUrl,
+        image_url: imageUrl || null
       };
       
       await saveApplicationToDatabase(applicationData);
       
-      // Send WhatsApp message
       const message = `New job application received!\n\nPosition: ${title}\nName: ${formData.name}\nEmail: ${formData.email}\nPhone: ${formData.phone || 'Not provided'}\n\nApplicant message: ${formData.message.substring(0, 100)}${formData.message.length > 100 ? '...' : ''}`;
       
       const whatsappResult = sendWhatsAppMessage(message);
       
-      // Also call the Supabase Edge Function if needed
       try {
         await supabase.functions.invoke('career-apply', {
           body: JSON.stringify(applicationData)
         });
       } catch (functionError) {
         console.error("Edge function error:", functionError);
-        // Don't fail the submission if edge function fails
       }
 
       toast({
@@ -177,7 +195,6 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
         duration: 5000
       });
 
-      // Reset form
       setFormData({
         name: "",
         email: "",
@@ -186,6 +203,7 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
         resume_url: ""
       });
       setResumeFile(null);
+      setImageFile(null);
       setIsOpen(false);
     } catch (error) {
       console.error("Error submitting application:", error);
@@ -313,6 +331,21 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
                     </p>
                   )}
                 </div>
+              </div>
+              
+              <div>
+                <Label>Optional Profile Image</Label>
+                <ApplyFileUpload
+                  accept="image/jpeg,image/png,image/gif"
+                  maxSizeMB={5}
+                  type="image"
+                  onChange={(file) => setImageFile(file)}
+                />
+                {imageFile && (
+                  <p className="text-xs text-green-600 mt-1">
+                    ✓ {imageFile.name} selected
+                  </p>
+                )}
               </div>
               
               <div className="flex justify-end space-x-3 pt-3">
