@@ -14,5 +14,10 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storageKey: 'synjoint-auth-token',
     detectSessionInUrl: true, // Help detect OAuth session in the URL
     flowType: 'pkce' // Use PKCE flow for better security
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'synjoint-website'
+    }
   }
 });

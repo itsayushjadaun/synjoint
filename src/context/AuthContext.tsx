@@ -1,8 +1,7 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
-import { supabase } from '../utils/supabase';
+import { supabase } from '../integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 
 interface AuthUser {
@@ -80,19 +79,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setDarkMode(prev => !prev);
   };
 
-  // Simplified initialization for more reliability
   useEffect(() => {
     const initializeAuth = async () => {
       try {
         setIsLoading(true);
         
-        // Set up the auth state change listener
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           (event, session) => {
             console.log("Auth state changed:", event, session);
             
             if (session?.user) {
-              // Use setTimeout to prevent possible deadlocks
               setTimeout(async () => {
                 try {
                   const { data: userData, error: userError } = await supabase
@@ -138,7 +134,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         );
         
-        // Get the current session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
@@ -225,7 +220,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<void> => {
     try {
       console.log("Attempting login for:", email);
       
@@ -247,7 +242,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       // Auth state change listener will handle setting the user
-      return data;
     } catch (error: any) {
       console.error("Login error:", error);
       throw error;
