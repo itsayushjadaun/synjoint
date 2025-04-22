@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
@@ -102,6 +103,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     return;
                   }
                   
+                  // Type-safe assignment for role
+                  let userRole: 'admin' | 'user' = 'user';
+                  
+                  if (userData?.role === 'admin' || 
+                      session.user.email?.endsWith('@synjoint.com')) {
+                    userRole = 'admin';
+                  }
+                  
                   setUser({
                     id: session.user.id,
                     email: session.user.email || '',
@@ -109,8 +118,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                           userData?.name || 
                           session.user.email?.split('@')[0] || 
                           'User',
-                    role: userData?.role || 
-                          (session.user.email?.endsWith('@synjoint.com') ? 'admin' : 'user'),
+                    role: userRole,
                     picture: session.user.user_metadata?.avatar_url || userData?.picture,
                     count: userData?.count || 1,
                     profile: userData
@@ -153,6 +161,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             console.error('Error fetching user data:', userError);
           }
           
+          // Type-safe role assignment
+          let userRole: 'admin' | 'user' = 'user';
+          
+          if ((userData?.role as string) === 'admin' || 
+              session.user.email?.endsWith('@synjoint.com')) {
+            userRole = 'admin';
+          }
+          
           setUser({
             id: session.user.id,
             email: session.user.email || '',
@@ -160,8 +176,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                   userData?.name || 
                   session.user.email?.split('@')[0] || 
                   'User',
-            role: userData?.role || 
-                  (session.user.email?.endsWith('@synjoint.com') ? 'admin' : 'user'),
+            role: userRole,
             picture: session.user.user_metadata?.avatar_url || userData?.picture,
             count: userData?.count || 1,
             profile: userData
@@ -252,13 +267,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       console.log("Attempting signup for:", email);
       
+      // Ensure role is type-safe
+      const userRole: 'admin' | 'user' = email.endsWith('@synjoint.com') ? 'admin' : 'user';
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
             name,
-            role: email.endsWith('@synjoint.com') ? 'admin' : 'user',
+            role: userRole,
           },
           emailRedirectTo: `${window.location.origin}/auth/callback?type=signup`
         }
@@ -346,7 +364,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .insert({
           title: blog.title,
           content: blog.content,
-          image_url: blog.image_url || '/lovable-uploads/cef8ce24-f36c-4060-8c3e-41ce14874770.png'
+          image_url: blog.image_url || '/lovable-uploads/cef8ce24-f36c-4060-8c3e-41ce14874770.png',
+          author_id: user.id,
+          author_name: user.name
         })
         .select();
       

@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -8,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import ApplyResumeUpload from "../components/ApplyResumeUpload";
+import ApplyFileUpload from "../components/ApplyFileUpload";
 import { supabase } from "@/integrations/supabase/client";
 
 const CreateBlog = () => {
@@ -38,8 +39,30 @@ const CreateBlog = () => {
       
       const bucketName = "blog-images";
       
-      // Upload the file directly without checking/creating bucket
-      // We rely on the bucket already being created via SQL migrations
+      // Check if bucket exists before uploading
+      const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
+      
+      if (bucketError) {
+        console.error("Error checking buckets:", bucketError);
+        throw bucketError;
+      }
+      
+      const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
+      
+      if (!bucketExists) {
+        console.log("Blog images bucket doesn't exist, creating it...");
+        const { error: createError } = await supabase.storage.createBucket(bucketName, {
+          public: true,
+          fileSizeLimit: 10485760 // 10MB
+        });
+        
+        if (createError) {
+          console.error("Error creating bucket:", createError);
+          throw createError;
+        }
+      }
+      
+      // Upload the file
       const ext = file.name.split(".").pop();
       const filePath = `blog_${Date.now()}.${ext}`;
       
@@ -143,10 +166,11 @@ const CreateBlog = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="blog-image" className="dark:text-white">Blog Banner/Thumbnail Image</Label>
-                <ApplyResumeUpload
+                <ApplyFileUpload
                   accept="image/jpeg,image/png,image/webp"
                   maxSizeMB={5}
                   onChange={handleImageChange}
+                  type="image"
                   required
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400">
