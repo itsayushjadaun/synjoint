@@ -9,6 +9,7 @@ import { FileText, Briefcase, Users, ArrowRight, Mail, Phone, Download, External
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 const AdminDashboard = () => {
