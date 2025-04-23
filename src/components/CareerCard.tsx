@@ -8,7 +8,7 @@ import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, Dialog
 import { useToast } from "@/hooks/use-toast";
 import ApplyResumeUpload from "./ApplyResumeUpload";
 import ApplyFileUpload from "./ApplyFileUpload";
-import { supabase } from "@/utils/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { sendWhatsAppMessage } from "@/utils/whatsapp";
 
 interface CareerCardProps {
@@ -111,8 +111,7 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
           message: applicationData.message,
           resume_url: applicationData.resume_url,
           status: 'pending'
-        })
-        .select();
+        });
       
       if (error) throw error;
       
@@ -169,8 +168,11 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
       }
       
       const applicationData = {
-        ...formData,
         position: title,
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || null,
+        message: formData.message,
         resume_url: resumeUrl,
         image_url: imageUrl || null
       };
