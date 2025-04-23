@@ -13,7 +13,7 @@ import ApplyFileUpload from "../components/ApplyFileUpload";
 import { supabase } from "@/integrations/supabase/client";
 
 const CreateBlog = () => {
-  const { user, addBlog } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const [title, setTitle] = useState("");
@@ -80,24 +80,20 @@ const CreateBlog = () => {
         return;
       }
 
+      // Simplify the blog post data structure to avoid any potential permission issues
       console.log("Attempting to save blog with the following data:");
-      console.log({
+      const blogData = {
         title,
         content,
         image_url: url,
         author_id: user?.id,
-        author_name: user?.name || user?.email
-      });
+        author_name: user?.name || user?.email || 'Anonymous'
+      };
+      console.log(blogData);
       
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('blogs')
-        .insert({
-          title: title,
-          content: content,
-          image_url: url,
-          author_id: user?.id,
-          author_name: user?.name || user?.email || 'Anonymous'
-        });
+        .insert(blogData);
       
       if (error) {
         console.error("Database insert error:", error);
@@ -106,14 +102,14 @@ const CreateBlog = () => {
         return;
       }
       
-      console.log("Blog saved successfully:", data);
+      console.log("Blog saved successfully");
       toast.success("Blog post published successfully!");
       
-      // Force refresh blogs in the parent component
+      // Redirect to blogs page after a brief delay
       setTimeout(() => {
         navigate('/blogs');
       }, 1000);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating blog post:", error);
       toast.error("Failed to publish! Please check the console for details.");
     } finally {
