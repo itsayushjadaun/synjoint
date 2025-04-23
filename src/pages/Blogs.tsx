@@ -6,16 +6,43 @@ import { useAuth } from "../context/AuthContext";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Blogs = () => {
-  const { blogs, user, refreshBlogs } = useAuth();
+  const { user, blogs: contextBlogs, refreshBlogs } = useAuth();
+  const [blogs, setBlogs] = useState(contextBlogs);
+  const [isLoading, setIsLoading] = useState(true);
   const isAdmin = user?.role === 'admin';
   
+  const fetchBlogs = async () => {
+    setIsLoading(true);
+    try {
+      console.log("Fetching blogs directly from database...");
+      const { data, error } = await supabase
+        .from('blogs')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
+      if (error) {
+        console.error("Error fetching blogs:", error);
+        toast.error("Failed to load blog posts");
+      } else {
+        console.log("Blogs fetched successfully:", data);
+        setBlogs(data);
+      }
+    } catch (error) {
+      console.error("Unexpected error fetching blogs:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   useEffect(() => {
-    console.log("Blogs component mounted, refreshing blogs...");
-    refreshBlogs();
-  }, [refreshBlogs]);
+    console.log("Blogs component mounted, fetching blogs...");
+    fetchBlogs();
+  }, []);
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
@@ -41,7 +68,11 @@ const Blogs = () => {
           )}
         </div>
         
-        {blogs.length > 0 ? (
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <p className="text-gray-600 dark:text-gray-300">Loading blog posts...</p>
+          </div>
+        ) : blogs.length > 0 ? (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

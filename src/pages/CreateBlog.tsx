@@ -37,6 +37,7 @@ const CreateBlog = () => {
     const ext = file.name.split(".").pop();
     const filePath = `blog_${Date.now()}.${ext}`;
     
+    console.log("Starting image upload to storage bucket...");
     const { data, error } = await supabase.storage
       .from('blog-images')
       .upload(filePath, file, {
@@ -65,10 +66,13 @@ const CreateBlog = () => {
     }
 
     setIsSubmitting(true);
+    
     try {
       let url = imageUrl;
+      
       try {
         url = await uploadImageToSupabase(imageFile);
+        console.log("Image uploaded successfully to:", url);
       } catch (imgError) {
         console.error("Image upload error details:", imgError);
         toast.error("Image upload failed, please try again.");
@@ -76,26 +80,39 @@ const CreateBlog = () => {
         return;
       }
 
-      console.log("Image upload successful, URL:", url);
-      console.log("Saving blog to database with title:", title);
+      console.log("Attempting to save blog with the following data:");
+      console.log({
+        title,
+        content,
+        image_url: url,
+        author_id: user?.id,
+        author_name: user?.name || user?.email
+      });
       
-      // Use the blogAPI directly instead of going through useAuth context
-      // This gives us more direct control and better error handling
-      const { data: blogAPI } = await supabase
+      const { data, error } = await supabase
         .from('blogs')
         .insert({
           title: title,
           content: content,
           image_url: url,
-          author_id: user?.id || '',
+          author_id: user?.id,
           author_name: user?.name || user?.email || 'Anonymous'
-        })
-        .select();
+        });
       
-      console.log("Blog save response:", blogAPI);
+      if (error) {
+        console.error("Database insert error:", error);
+        toast.error(`Failed to save blog: ${error.message}`);
+        setIsSubmitting(false);
+        return;
+      }
       
-      toast.success("Blog post published!");
-      navigate('/blogs');
+      console.log("Blog saved successfully:", data);
+      toast.success("Blog post published successfully!");
+      
+      // Force refresh blogs in the parent component
+      setTimeout(() => {
+        navigate('/blogs');
+      }, 1000);
     } catch (error) {
       console.error("Error creating blog post:", error);
       toast.error("Failed to publish! Please check the console for details.");
