@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -75,16 +76,29 @@ const CreateBlog = () => {
         return;
       }
 
-      await addBlog({ 
-        title, 
-        content, 
-        image_url: url
-      });
+      console.log("Image upload successful, URL:", url);
+      console.log("Saving blog to database with title:", title);
+      
+      // Use the blogAPI directly instead of going through useAuth context
+      // This gives us more direct control and better error handling
+      const { data: blogAPI } = await supabase
+        .from('blogs')
+        .insert({
+          title: title,
+          content: content,
+          image_url: url,
+          author_id: user?.id || '',
+          author_name: user?.name || user?.email || 'Anonymous'
+        })
+        .select();
+      
+      console.log("Blog save response:", blogAPI);
+      
       toast.success("Blog post published!");
       navigate('/blogs');
     } catch (error) {
       console.error("Error creating blog post:", error);
-      toast.error("Failed to publish!");
+      toast.error("Failed to publish! Please check the console for details.");
     } finally {
       setIsSubmitting(false);
     }

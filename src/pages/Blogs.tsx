@@ -13,6 +13,7 @@ const Blogs = () => {
   const isAdmin = user?.role === 'admin';
   
   useEffect(() => {
+    console.log("Blogs component mounted, refreshing blogs...");
     refreshBlogs();
   }, [refreshBlogs]);
 
