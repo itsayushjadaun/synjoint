@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -34,60 +33,27 @@ const CreateBlog = () => {
   };
 
   const uploadImageToSupabase = async (file: File): Promise<string> => {
-    try {
-      console.log("Starting upload to Supabase storage...");
-      
-      const bucketName = "blog-images";
-      
-      // Check if bucket exists before uploading
-      const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
-      
-      if (bucketError) {
-        console.error("Error checking buckets:", bucketError);
-        throw bucketError;
-      }
-      
-      const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
-      
-      if (!bucketExists) {
-        console.log("Blog images bucket doesn't exist, creating it...");
-        const { error: createError } = await supabase.storage.createBucket(bucketName, {
-          public: true,
-          fileSizeLimit: 10485760 // 10MB
-        });
-        
-        if (createError) {
-          console.error("Error creating bucket:", createError);
-          throw createError;
-        }
-      }
-      
-      // Upload the file
-      const ext = file.name.split(".").pop();
-      const filePath = `blog_${Date.now()}.${ext}`;
-      
-      const { data, error } = await supabase.storage
-        .from(bucketName)
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-      
-      if (error) {
-        console.error("Storage upload error:", error);
-        throw error;
-      }
-      
-      const { data: urlData } = supabase.storage
-        .from(bucketName)
-        .getPublicUrl(filePath);
-      
-      console.log("File uploaded successfully:", urlData.publicUrl);
-      return urlData.publicUrl;
-    } catch (error) {
-      console.error("Image upload error:", error);
+    const ext = file.name.split(".").pop();
+    const filePath = `blog_${Date.now()}.${ext}`;
+    
+    const { data, error } = await supabase.storage
+      .from('blog-images')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+    
+    if (error) {
+      console.error("Storage upload error:", error);
       throw error;
     }
+    
+    const { data: urlData } = supabase.storage
+      .from('blog-images')
+      .getPublicUrl(filePath);
+    
+    console.log("File uploaded successfully:", urlData.publicUrl);
+    return urlData.publicUrl;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
