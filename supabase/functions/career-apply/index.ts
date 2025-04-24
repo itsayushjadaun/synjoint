@@ -62,18 +62,7 @@ async function ensureStorageBucketExists(supabase: any, bucketName: string) {
         throw createError;
       }
       
-      // Add public access policy
-      const { error: policyError } = await supabase.rpc('create_storage_policy', {
-        bucket_id: bucketName,
-        policy_name: `Allow public access to ${bucketName}`,
-        definition: "true",
-        policy_for: 'SELECT'
-      });
-      
-      if (policyError) {
-        console.error("Error creating bucket policy:", policyError);
-      }
-      
+      // Use simpler bucket policy approach to ensure it works
       console.log(`${bucketName} bucket created successfully`);
     } else {
       console.log(`${bucketName} bucket already exists`);
@@ -131,8 +120,9 @@ serve(async (req) => {
       throw new Error("Failed to submit your application");
     }
 
-    // Prepare WhatsApp message
-    const waMsg = `New job application from ${name}\nPosition: ${position}\nEmail: ${email}\nPhone: ${phone || 'Not provided'}\nMessage: ${message}\nResume: ${resume_url || 'Not provided'}`;
+    // Prepare WhatsApp message with resume link
+    const resumeLink = resume_url ? `\n\nResume: ${resume_url}` : "\n\nNo resume provided";
+    const waMsg = `New job application from ${name}\nPosition: ${position}\nEmail: ${email}\nPhone: ${phone || 'Not provided'}\nMessage: ${message}${resumeLink}`;
     const whatsappResult = await sendWhatsAppMessage(waMsg);
 
     // Send email notification to admin
