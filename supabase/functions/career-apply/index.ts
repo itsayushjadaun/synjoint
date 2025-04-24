@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,21 +14,17 @@ interface ApplicationData {
   phone?: string;
   position: string;
   message: string;
-  resume_url?: string;
-  image_url?: string;
+  resume?: File;
 }
 
 // Function to send WhatsApp message
 async function sendWhatsAppMessage(message: string) {
   try {
-    const phone = "918824405590"; // Phone number in international format without +
+    const phone = "918824405590";
     const encodedMessage = encodeURIComponent(message);
     
-    // Log the WhatsApp message for debugging
     console.log(`Preparing WhatsApp message to ${phone}: ${message}`);
     
-    // For edge function, we can't directly open a browser window
-    // Instead, we'll create the URL that will be used client-side
     return {
       whatsappUrl: `https://wa.me/${phone}?text=${encodedMessage}`,
       success: true
@@ -38,53 +35,54 @@ async function sendWhatsAppMessage(message: string) {
   }
 }
 
-// Create the storage bucket if it doesn't exist
-async function ensureStorageBucketExists(supabase: any, bucketName: string) {
+// Function to send email with resume attachment
+async function sendEmailWithResume(data: ApplicationData) {
   try {
-    // Check if the bucket exists
-    const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+    const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
     
-    if (listError) {
-      console.error("Error checking buckets:", listError);
-      throw listError;
-    }
-    
-    const bucketExists = buckets?.some(bucket => bucket.id === bucketName);
-    
-    if (!bucketExists) {
-      console.log(`${bucketName} bucket doesn't exist, creating it...`);
-      const { error: createError } = await supabase.storage.createBucket(bucketName, { 
-        public: true 
-      });
-      
-      if (createError) {
-        console.error("Error creating bucket:", createError);
-        throw createError;
-      }
-      
-      // Use simpler bucket policy approach to ensure it works
-      console.log(`${bucketName} bucket created successfully`);
-    } else {
-      console.log(`${bucketName} bucket already exists`);
-    }
+    const emailHtml = `
+      <h1>New Job Application</h1>
+      <p><strong>Position:</strong> ${data.position}</p>
+      <p><strong>Name:</strong> ${data.name}</p>
+      <p><strong>Email:</strong> ${data.email}</p>
+      <p><strong>Phone:</strong> ${data.phone || 'Not provided'}</p>
+      <p><strong>Message:</strong></p>
+      <p>${data.message}</p>
+    `;
+
+    const emailResponse = await resend.emails.send({
+      from: "Synjoint Careers <careers@synjoint.com>",
+      to: "synjoint.tech@gmail.com",
+      subject: `New Job Application: ${data.position} - ${data.name}`,
+      html: emailHtml,
+      attachments: data.resume ? [{
+        filename: data.resume.name,
+        content: await data.resume.arrayBuffer()
+      }] : undefined
+    });
+
+    console.log("Email sent successfully:", emailResponse);
+    return { success: true };
   } catch (error) {
-    console.error(`Error ensuring ${bucketName} bucket exists:`, error);
-    throw error;
+    console.error("Error sending email:", error);
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
   }
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
-    return new Response(null, {
-      headers: corsHeaders,
-    });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { name, email, phone, position, message, resume_url, image_url }: ApplicationData = await req.json();
+    const formData = await req.formData();
+    const name = formData.get('name') as string;
+    const email = formData.get('email') as string;
+    const phone = formData.get('phone') as string;
+    const position = formData.get('position') as string;
+    const message = formData.get('message') as string;
+    const resume = formData.get('resume') as File || undefined;
 
-    // Input validation
     if (!name || !email || !position || !message) {
       throw new Error("Name, email, position, and message are required");
     }
@@ -94,14 +92,11 @@ serve(async (req) => {
       throw new Error("Please provide a valid email address");
     }
 
-    // Store the application in the database
     const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Ensure the storage bucket exists
-    await ensureStorageBucketExists(supabase, "career-resumes");
-
+    // Store application details in database (without resume)
     const { error: dbError } = await supabase
       .from("job_applications")
       .insert({
@@ -110,8 +105,6 @@ serve(async (req) => {
         phone: phone || null,
         position,
         message,
-        resume_url: resume_url || null,
-        image_url: image_url || null,
         status: "new"
       });
 
@@ -120,15 +113,15 @@ serve(async (req) => {
       throw new Error("Failed to submit your application");
     }
 
-    // Prepare WhatsApp message with resume link
-    const resumeLink = resume_url ? `\n\nResume: ${resume_url}` : "\n\nNo resume provided";
-    const waMsg = `New job application from ${name}\nPosition: ${position}\nEmail: ${email}\nPhone: ${phone || 'Not provided'}\nMessage: ${message}${resumeLink}`;
-    const whatsappResult = await sendWhatsAppMessage(waMsg);
+    // Send email with resume attachment
+    const emailResult = await sendEmailWithResume({ name, email, phone, position, message, resume });
+    if (!emailResult.success) {
+      console.error("Failed to send email:", emailResult.error);
+    }
 
-    // Send email notification to admin
-    // For now, we'll just log it. Later, you can integrate an email service
-    console.log(`Job application email would be sent to synjoint.tech@gmail.com`);
-    console.log(`From: ${name} (${email}) for position: ${position}`);
+    // Prepare WhatsApp message
+    const waMsg = `New job application from ${name}\nPosition: ${position}\nEmail: ${email}\nPhone: ${phone || 'Not provided'}\nMessage: ${message}`;
+    const whatsappResult = await sendWhatsAppMessage(waMsg);
 
     return new Response(
       JSON.stringify({

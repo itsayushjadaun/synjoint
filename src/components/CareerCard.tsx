@@ -125,7 +125,7 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name || !formData.email || !formData.message || !resumeFile) {
+    if (!formData.name || !formData.email || !formData.message) {
       toast({
         title: "Missing information",
         description: "Please fill in all required fields.",
@@ -137,58 +137,25 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
     setIsSubmitting(true);
 
     try {
-      let resumeUrl = "";
-      let imageUrl = "";
-
-      try {
-        resumeUrl = await uploadResumeToSupabase(resumeFile);
-        
-        if (imageFile) {
-          const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}.${imageFile.name.split('.').pop()}`;
-          const filePath = `job-application-images/${fileName}`;
-          
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('job-application-images')
-            .upload(filePath, imageFile, {
-              cacheControl: '3600',
-              upsert: false
-            });
-          
-          if (uploadError) throw uploadError;
-          
-          const { data: urlData } = supabase.storage
-            .from('job-application-images')
-            .getPublicUrl(filePath);
-          
-          imageUrl = urlData.publicUrl;
-        }
-      } catch (fileErr) {
-        setIsSubmitting(false);
-        return;
+      const formDataToSend = new FormData();
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('email', formData.email);
+      formDataToSend.append('phone', formData.phone || '');
+      formDataToSend.append('position', title);
+      formDataToSend.append('message', formData.message);
+      
+      if (resumeFile) {
+        formDataToSend.append('resume', resumeFile);
       }
       
-      const applicationData = {
-        position: title,
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone || null,
-        message: formData.message,
-        resume_url: resumeUrl,
-        image_url: imageUrl || null
-      };
-      
-      await saveApplicationToDatabase(applicationData);
-      
-      const message = `New job application received!\n\nPosition: ${title}\nName: ${formData.name}\nEmail: ${formData.email}\nPhone: ${formData.phone || 'Not provided'}\n\nApplicant message: ${formData.message.substring(0, 100)}${formData.message.length > 100 ? '...' : ''}`;
-      
-      const whatsappResult = sendWhatsAppMessage(message);
-      
-      try {
-        await supabase.functions.invoke('career-apply', {
-          body: JSON.stringify(applicationData)
-        });
-      } catch (functionError) {
-        console.error("Edge function error:", functionError);
+      const { data, error } = await supabase.functions.invoke('career-apply', {
+        body: formDataToSend
+      });
+
+      if (error) throw error;
+
+      if (data?.whatsapp?.whatsappUrl) {
+        window.open(data.whatsapp.whatsappUrl, '_blank');
       }
 
       toast({
