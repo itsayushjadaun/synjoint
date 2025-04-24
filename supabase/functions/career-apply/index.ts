@@ -14,6 +14,7 @@ interface ApplicationData {
   position: string;
   message: string;
   resume_url?: string;
+  image_url?: string;
 }
 
 // Function to send WhatsApp message
@@ -33,7 +34,53 @@ async function sendWhatsAppMessage(message: string) {
     };
   } catch (error) {
     console.error("Error preparing WhatsApp message:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
+  }
+}
+
+// Create the storage bucket if it doesn't exist
+async function ensureStorageBucketExists(supabase: any, bucketName: string) {
+  try {
+    // Check if the bucket exists
+    const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+    
+    if (listError) {
+      console.error("Error checking buckets:", listError);
+      throw listError;
+    }
+    
+    const bucketExists = buckets?.some(bucket => bucket.id === bucketName);
+    
+    if (!bucketExists) {
+      console.log(`${bucketName} bucket doesn't exist, creating it...`);
+      const { error: createError } = await supabase.storage.createBucket(bucketName, { 
+        public: true 
+      });
+      
+      if (createError) {
+        console.error("Error creating bucket:", createError);
+        throw createError;
+      }
+      
+      // Add public access policy
+      const { error: policyError } = await supabase.rpc('create_storage_policy', {
+        bucket_id: bucketName,
+        policy_name: `Allow public access to ${bucketName}`,
+        definition: "true",
+        policy_for: 'SELECT'
+      });
+      
+      if (policyError) {
+        console.error("Error creating bucket policy:", policyError);
+      }
+      
+      console.log(`${bucketName} bucket created successfully`);
+    } else {
+      console.log(`${bucketName} bucket already exists`);
+    }
+  } catch (error) {
+    console.error(`Error ensuring ${bucketName} bucket exists:`, error);
+    throw error;
   }
 }
 
@@ -46,7 +93,7 @@ serve(async (req) => {
   }
 
   try {
-    const { name, email, phone, position, message, resume_url }: ApplicationData = await req.json();
+    const { name, email, phone, position, message, resume_url, image_url }: ApplicationData = await req.json();
 
     // Input validation
     if (!name || !email || !position || !message) {
@@ -63,6 +110,9 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Ensure the storage bucket exists
+    await ensureStorageBucketExists(supabase, "career-resumes");
+
     const { error: dbError } = await supabase
       .from("job_applications")
       .insert({
@@ -72,6 +122,7 @@ serve(async (req) => {
         position,
         message,
         resume_url: resume_url || null,
+        image_url: image_url || null,
         status: "new"
       });
 

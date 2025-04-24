@@ -8,7 +8,9 @@ export const sendWhatsAppMessage = (message: string) => {
     // For client-side usage, create a WhatsApp URL
     const whatsappUrl = `https://wa.me/${phone}?text=${encodedMessage}`;
     
-    // Return the URL, don't open it programmatically
+    // Open the URL in a new tab
+    window.open(whatsappUrl, "_blank");
+    
     return {
       whatsappUrl,
       success: true
