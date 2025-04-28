@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "npm:resend@2.0.0";
@@ -15,24 +14,6 @@ interface ApplicationData {
   position: string;
   message: string;
   resume?: File;
-}
-
-// Function to send WhatsApp message
-async function sendWhatsAppMessage(message: string) {
-  try {
-    const phone = "918824405590";
-    const encodedMessage = encodeURIComponent(message);
-    
-    console.log(`Preparing WhatsApp message to ${phone}: ${message}`);
-    
-    return {
-      whatsappUrl: `https://wa.me/${phone}?text=${encodedMessage}`,
-      success: true
-    };
-  } catch (error) {
-    console.error("Error preparing WhatsApp message:", error);
-    return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
-  }
 }
 
 // Function to send email with resume attachment
@@ -119,15 +100,10 @@ serve(async (req) => {
       console.error("Failed to send email:", emailResult.error);
     }
 
-    // Prepare WhatsApp message
-    const waMsg = `New job application from ${name}\nPosition: ${position}\nEmail: ${email}\nPhone: ${phone || 'Not provided'}\nMessage: ${message}`;
-    const whatsappResult = await sendWhatsAppMessage(waMsg);
-
     return new Response(
       JSON.stringify({
         success: true,
         message: "Your application has been submitted successfully",
-        whatsapp: whatsappResult
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
