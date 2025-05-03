@@ -62,30 +62,13 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
     setIsSubmitting(true);
 
     try {
-      // Save application data to the database (excluding resume)
-      const { data: applicationData, error: applicationError } = await supabase
-        .from('job_applications')
-        .insert({
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone || null,
-          position: title,
-          message: formData.message,
-          status: 'new',
-          created_at: new Date().toISOString()
-        })
-        .select();
-      
-      if (applicationError) throw applicationError;
-      
-      // Send email with application details and attachments
+      // Create FormData object for file upload
       const formDataToSend = new FormData();
       formDataToSend.append('name', formData.name);
       formDataToSend.append('email', formData.email);
       formDataToSend.append('phone', formData.phone || '');
       formDataToSend.append('position', title);
       formDataToSend.append('message', formData.message);
-      formDataToSend.append('recipientEmail', 'ayushjadaun03@gmail.com');
       
       if (resumeFile) {
         formDataToSend.append('resume', resumeFile);
@@ -95,14 +78,38 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
         formDataToSend.append('image', imageFile);
       }
       
-      const { data, error } = await supabase.functions.invoke('send-application-email', {
+      // First try to send email directly
+      const { data: emailData, error: emailError } = await supabase.functions.invoke('send-application-email', {
         body: formDataToSend
       });
 
-      if (error) {
-        console.error("Error sending email:", error);
+      if (emailError) {
+        console.error("Error sending email directly:", emailError);
+        // Fallback to secondary method
+        const { data: fallbackData, error: fallbackError } = await supabase.functions.invoke('career-apply', {
+          body: formDataToSend
+        });
+        
+        if (fallbackError) {
+          throw fallbackError;
+        }
       }
 
+      // Save application data to the database
+      const { error: applicationError } = await supabase
+        .from('job_applications')
+        .insert({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone || null,
+          position: title,
+          message: formData.message,
+          status: 'new',
+          created_at: new Date().toISOString()
+        });
+      
+      if (applicationError) throw applicationError;
+      
       toast.success("Your application has been submitted! We'll review it soon.");
 
       setFormData({

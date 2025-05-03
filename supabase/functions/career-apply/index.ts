@@ -24,13 +24,47 @@ async function sendEmailWithResume(data: ApplicationData) {
     const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
     
     const emailHtml = `
-      <h1>New Job Application</h1>
-      <p><strong>Position:</strong> ${data.position}</p>
-      <p><strong>Name:</strong> ${data.name}</p>
-      <p><strong>Email:</strong> ${data.email}</p>
-      <p><strong>Phone:</strong> ${data.phone || 'Not provided'}</p>
-      <p><strong>Message:</strong></p>
-      <p>${data.message}</p>
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #006B9F; color: white; padding: 10px 20px; border-radius: 5px; margin-bottom: 20px; }
+          .section { margin-bottom: 20px; }
+          .label { font-weight: bold; }
+          .footer { font-size: 12px; color: #666; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>New Job Application Received</h1>
+          </div>
+          
+          <div class="section">
+            <p class="label">Position:</p>
+            <p>${data.position}</p>
+          </div>
+          
+          <div class="section">
+            <p class="label">Applicant Details:</p>
+            <p>Name: ${data.name}</p>
+            <p>Email: ${data.email}</p>
+            <p>Phone: ${data.phone || 'Not provided'}</p>
+          </div>
+          
+          <div class="section">
+            <p class="label">Cover Letter/Message:</p>
+            <p>${data.message.replace(/\n/g, '<br>')}</p>
+          </div>
+          
+          <div class="footer">
+            <p>This is an automated email from the SYNJOINT career application system.</p>
+          </div>
+        </div>
+      </body>
+      </html>
     `;
 
     const attachments = [];
@@ -38,14 +72,14 @@ async function sendEmailWithResume(data: ApplicationData) {
     if (data.resume) {
       attachments.push({
         filename: data.resume.name,
-        content: await data.resume.arrayBuffer()
+        content: new Uint8Array(await data.resume.arrayBuffer())
       });
     }
     
     if (data.image) {
       attachments.push({
         filename: data.image.name,
-        content: await data.image.arrayBuffer()
+        content: new Uint8Array(await data.image.arrayBuffer())
       });
     }
 
@@ -58,7 +92,7 @@ async function sendEmailWithResume(data: ApplicationData) {
     });
 
     console.log("Email sent successfully:", emailResponse);
-    return { success: true };
+    return { success: true, emailResponse };
   } catch (error) {
     console.error("Error sending email:", error);
     return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
@@ -71,6 +105,7 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Career apply function called");
     const formData = await req.formData();
     const name = formData.get('name') as string;
     const email = formData.get('email') as string;
@@ -79,6 +114,8 @@ serve(async (req) => {
     const message = formData.get('message') as string;
     const resume = formData.get('resume') as File || undefined;
     const image = formData.get('image') as File || undefined;
+
+    console.log("Application details:", { name, email, position });
 
     if (!name || !email || !position || !message) {
       throw new Error("Name, email, position, and message are required");
@@ -123,12 +160,16 @@ serve(async (req) => {
     
     if (!emailResult.success) {
       console.error("Failed to send email:", emailResult.error);
+      // Don't throw error here, just log it
+    } else {
+      console.log("Email sent successfully to admin");
     }
 
     return new Response(
       JSON.stringify({
         success: true,
         message: "Your application has been submitted successfully",
+        emailSent: emailResult.success
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
