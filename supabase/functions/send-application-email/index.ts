@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
+import { SMTPClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -28,7 +28,17 @@ serve(async (req) => {
     const resume = formData.get('resume') as File;
     const image = formData.get('image') as File;
 
-    const resend = new Resend('re_RUrwXUPJ_2Td7Eh3pesrokSx1UXoeFyh5');
+    const client = new SMTPClient({
+      connection: {
+        hostname: "smtp.gmail.com",
+        port: 465,
+        tls: true,
+        auth: {
+          username: "jadaunayush3@gmail.com",
+          password: "Bharatpur@123",
+        },
+      },
+    });
     
     const emailHtml = `
       <!DOCTYPE html>
@@ -95,18 +105,18 @@ serve(async (req) => {
       });
     }
 
-    const emailResponse = await resend.emails.send({
-      from: "Synjoint Careers <careers@synjoint.com>",
+    await client.send({
+      from: "jadaunayush3@gmail.com",
       to: recipientEmail,
       subject: `New Job Application: ${position} - ${name}`,
       html: emailHtml,
       attachments: attachments.length > 0 ? attachments : undefined
     });
 
-    console.log("Application email sent successfully:", emailResponse);
+    console.log("Application email sent successfully via SMTP");
     
     return new Response(
-      JSON.stringify({ success: true, emailResult: emailResponse }),
+      JSON.stringify({ success: true }),
       { 
         status: 200,
         headers: { 

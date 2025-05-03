@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { Resend } from "npm:resend@2.0.0";
+import { SMTPClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,7 +21,17 @@ interface ApplicationData {
 // Function to send email with resume attachment
 async function sendEmailWithResume(data: ApplicationData) {
   try {
-    const resend = new Resend('re_RUrwXUPJ_2Td7Eh3pesrokSx1UXoeFyh5');
+    const client = new SMTPClient({
+      connection: {
+        hostname: "smtp.gmail.com",
+        port: 465,
+        tls: true,
+        auth: {
+          username: "jadaunayush3@gmail.com",
+          password: "Bharatpur@123",
+        },
+      },
+    });
     
     const emailHtml = `
       <!DOCTYPE html>
@@ -70,29 +80,31 @@ async function sendEmailWithResume(data: ApplicationData) {
     const attachments = [];
     
     if (data.resume) {
+      const resumeBuffer = await data.resume.arrayBuffer();
       attachments.push({
         filename: data.resume.name,
-        content: new Uint8Array(await data.resume.arrayBuffer())
+        content: new Uint8Array(resumeBuffer),
       });
     }
     
     if (data.image) {
+      const imageBuffer = await data.image.arrayBuffer();
       attachments.push({
-        filename: data.image.name,
-        content: new Uint8Array(await data.image.arrayBuffer())
+        filename: data.image.name, 
+        content: new Uint8Array(imageBuffer),
       });
     }
 
-    const emailResponse = await resend.emails.send({
-      from: "Synjoint Careers <onboarding@resend.dev>",
+    await client.send({
+      from: "jadaunayush3@gmail.com",
       to: "ayushjadaun03@gmail.com",
       subject: `New Job Application: ${data.position} - ${data.name}`,
       html: emailHtml,
       attachments: attachments.length > 0 ? attachments : undefined
     });
 
-    console.log("Email sent successfully:", emailResponse);
-    return { success: true, emailResponse };
+    console.log("Email sent successfully via SMTP");
+    return { success: true };
   } catch (error) {
     console.error("Error sending email:", error);
     return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
