@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "npm:resend@2.0.0";
@@ -14,6 +15,7 @@ interface ApplicationData {
   position: string;
   message: string;
   resume?: File;
+  image?: File;
 }
 
 // Function to send email with resume attachment
@@ -31,15 +33,28 @@ async function sendEmailWithResume(data: ApplicationData) {
       <p>${data.message}</p>
     `;
 
+    const attachments = [];
+    
+    if (data.resume) {
+      attachments.push({
+        filename: data.resume.name,
+        content: await data.resume.arrayBuffer()
+      });
+    }
+    
+    if (data.image) {
+      attachments.push({
+        filename: data.image.name,
+        content: await data.image.arrayBuffer()
+      });
+    }
+
     const emailResponse = await resend.emails.send({
       from: "Synjoint Careers <careers@synjoint.com>",
       to: "ayushjadaun03@gmail.com",
       subject: `New Job Application: ${data.position} - ${data.name}`,
       html: emailHtml,
-      attachments: data.resume ? [{
-        filename: data.resume.name,
-        content: await data.resume.arrayBuffer()
-      }] : undefined
+      attachments: attachments.length > 0 ? attachments : undefined
     });
 
     console.log("Email sent successfully:", emailResponse);
@@ -63,6 +78,7 @@ serve(async (req) => {
     const position = formData.get('position') as string;
     const message = formData.get('message') as string;
     const resume = formData.get('resume') as File || undefined;
+    const image = formData.get('image') as File || undefined;
 
     if (!name || !email || !position || !message) {
       throw new Error("Name, email, position, and message are required");
@@ -95,7 +111,16 @@ serve(async (req) => {
     }
 
     // Send email with resume attachment
-    const emailResult = await sendEmailWithResume({ name, email, phone, position, message, resume });
+    const emailResult = await sendEmailWithResume({ 
+      name, 
+      email, 
+      phone, 
+      position, 
+      message, 
+      resume,
+      image
+    });
+    
     if (!emailResult.success) {
       console.error("Failed to send email:", emailResult.error);
     }

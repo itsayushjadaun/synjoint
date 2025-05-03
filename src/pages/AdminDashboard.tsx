@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -10,7 +9,6 @@ import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/hooks/use-toast";
-import { sendWhatsAppMessage } from "@/utils/whatsapp";
 import { supabase } from "@/integrations/supabase/client";
 
 type JobApplication = {
@@ -416,26 +414,6 @@ const AdminDashboard = () => {
                             onClick={() => window.location.href = `mailto:${app.email}?subject=Re: Your application for ${app.position}&body=Dear ${app.name},%0A%0A`}
                           >
                             Reply via Email
-                          </Button>
-                          
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => {
-                              const msg = `Hello ${app.name}, regarding your application for ${app.position} at Synjoint...`;
-                              const phone = app.phone?.replace(/\D/g, '') || '';
-                              if (phone) {
-                                sendWhatsAppMessage(msg);
-                              } else {
-                                toast({
-                                  title: "No phone number",
-                                  description: "This applicant didn't provide a phone number",
-                                  variant: "destructive"
-                                });
-                              }
-                            }}
-                          >
-                            WhatsApp
                           </Button>
                         </div>
                       </div>

@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,6 @@ import { useToast } from "@/hooks/use-toast";
 import ApplyResumeUpload from "./ApplyResumeUpload";
 import ApplyFileUpload from "./ApplyFileUpload";
 import { supabase } from "@/integrations/supabase/client";
-import { sendWhatsAppMessage } from "@/utils/whatsapp";
 
 interface CareerCardProps {
   id: string;
@@ -27,7 +27,6 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
     email: "",
     phone: "",
     message: "",
-    resume_url: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -44,84 +43,6 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
     setResumeFile(file);
   };
 
-  const uploadResumeToSupabase = async (file: File) => {
-    try {
-      console.log("Starting resume upload to Supabase");
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-      const filePath = `resumes/${fileName}`;
-      
-      const { data: buckets, error: bucketError } = await supabase.storage.listBuckets();
-      
-      if (bucketError) {
-        console.error("Error checking buckets:", bucketError);
-        throw bucketError;
-      }
-      
-      const bucketName = "career-resumes";
-      const bucketExists = buckets?.some(bucket => bucket.name === bucketName);
-      
-      if (!bucketExists) {
-        console.log("Career resumes bucket doesn't exist, creating it...");
-        const { error: createError } = await supabase.storage.createBucket(bucketName, { 
-          public: true 
-        });
-        
-        if (createError) {
-          console.error("Error creating bucket:", createError);
-          throw createError;
-        }
-      }
-      
-      const { data, error } = await supabase.storage
-        .from(bucketName)
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
-        
-      if (error) throw error;
-      
-      const { data: urlData } = supabase.storage
-        .from(bucketName)
-        .getPublicUrl(filePath);
-        
-      console.log("Resume uploaded successfully:", urlData.publicUrl);
-      return urlData.publicUrl;
-    } catch (error) {
-      console.error("Resume upload failed:", error);
-      toast({
-        title: "Upload Failed",
-        description: "Failed to upload resume. Please try again.",
-        variant: "destructive"
-      });
-      throw error;
-    }
-  };
-
-  const saveApplicationToDatabase = async (applicationData: any) => {
-    try {
-      const { data, error } = await supabase
-        .from('job_applications')
-        .insert({
-          position: applicationData.position,
-          name: applicationData.name,
-          email: applicationData.email,
-          phone: applicationData.phone || null,
-          message: applicationData.message,
-          resume_url: applicationData.resume_url,
-          status: 'pending'
-        });
-      
-      if (error) throw error;
-      
-      return data;
-    } catch (error) {
-      console.error("Error saving application to database:", error);
-      throw error;
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -129,6 +50,15 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
       toast({
         title: "Missing information",
         description: "Please fill in all required fields.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!resumeFile) {
+      toast({
+        title: "Resume required",
+        description: "Please upload your resume.",
         variant: "destructive"
       });
       return;
@@ -148,15 +78,15 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
         formDataToSend.append('resume', resumeFile);
       }
       
+      if (imageFile) {
+        formDataToSend.append('image', imageFile);
+      }
+      
       const { data, error } = await supabase.functions.invoke('career-apply', {
         body: formDataToSend
       });
 
       if (error) throw error;
-
-      if (data?.whatsapp?.whatsappUrl) {
-        window.open(data.whatsapp.whatsappUrl, '_blank');
-      }
 
       toast({
         title: "Application submitted",
@@ -169,7 +99,6 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
         email: "",
         phone: "",
         message: "",
-        resume_url: ""
       });
       setResumeFile(null);
       setImageFile(null);
