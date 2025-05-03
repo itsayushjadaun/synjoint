@@ -84,7 +84,7 @@ async function sendEmailWithResume(data: ApplicationData) {
     }
 
     const emailResponse = await resend.emails.send({
-      from: "Synjoint Careers <careers@synjoint.com>",
+      from: "Synjoint Careers <onboarding@resend.dev>",
       to: "ayushjadaun03@gmail.com",
       subject: `New Job Application: ${data.position} - ${data.name}`,
       html: emailHtml,
