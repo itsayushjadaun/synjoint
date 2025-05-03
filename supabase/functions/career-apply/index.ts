@@ -21,7 +21,7 @@ interface ApplicationData {
 // Function to send email with resume attachment
 async function sendEmailWithResume(data: ApplicationData) {
   try {
-    const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+    const resend = new Resend('re_RUrwXUPJ_2Td7Eh3pesrokSx1UXoeFyh5');
     
     const emailHtml = `
       <!DOCTYPE html>
