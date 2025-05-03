@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Navbar from "../components/Navbar";
@@ -8,7 +9,6 @@ import { toast } from "sonner";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { createClient } from "@supabase/supabase-js";
 import Footer from "../components/Footer";
-import { sendWhatsAppMessage } from "../utils/whatsapp";
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL || '',
@@ -44,9 +44,6 @@ const Contact = () => {
       });
       
       if (error) throw error;
-      
-      const waMsg = `Contact Form:\nName: ${formData.name}\nEmail: ${formData.email}\nMessage: ${formData.message}`;
-      await sendWhatsAppMessage(waMsg);
       
       toast.success("Your message has been sent! We'll get back to you soon.");
       setFormData({ name: "", email: "", message: "" });
