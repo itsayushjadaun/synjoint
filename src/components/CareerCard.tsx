@@ -46,19 +46,15 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
     e.preventDefault();
 
     if (!formData.name || !formData.email || !formData.message) {
-      toast({
-        title: "Missing information",
-        description: "Please fill in all required fields.",
-        variant: "destructive"
+      toast.error("Missing information", {
+        description: "Please fill in all required fields."
       });
       return;
     }
     
     if (!resumeFile) {
-      toast({
-        title: "Resume required",
-        description: "Please upload your resume.",
-        variant: "destructive"
+      toast.error("Resume required", {
+        description: "Please upload your resume."
       });
       return;
     }
