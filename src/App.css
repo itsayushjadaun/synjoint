@@ -1,3 +1,4 @@
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -39,4 +40,72 @@
 
 .read-the-docs {
   color: #888;
+}
+
+/* Dark mode improvements */
+.dark {
+  --background: 225 25% 12%; /* #1e1e2f */
+  --foreground: 0 0% 88%; /* #e0e0e0 */
+  --card: 225 25% 15%; /* #272a3f */
+  --card-foreground: 0 0% 90%; /* #e6e6e6 */
+  --popover: 225 25% 12%; /* #1e1e2f */
+  --popover-foreground: 0 0% 88%; /* #e0e0e0 */
+  --primary: 215 75% 50%; /* #0d6efd lighter blue */
+  --primary-foreground: 0 0% 100%; /* white */
+  --secondary: 220 18% 20%; /* #2a2e3b dark blue-gray */
+  --secondary-foreground: 0 0% 88%; /* #e0e0e0 */
+  --muted: 220 12% 20%; /* #2a2c33 dark gray */
+  --muted-foreground: 220 10% 60%; /* #8e91a1 gray */
+  --accent: 225 38% 24%; /* #32365f blue-purple */
+  --accent-foreground: 0 0% 98%; /* #fafafa white */
+  --destructive: 0 70% 42%; /* #c92625 dark red */
+  --destructive-foreground: 0 0% 98%; /* #fafafa white */
+  --border: 220 10% 22%; /* #2a2d35 dark border */
+  --input: 220 10% 22%; /* #2a2d35 dark input */
+  --ring: 215 75% 50%; /* #0d6efd lighter blue */
+}
+
+.dark body {
+  background-color: #1e1e2f;
+  color: #e0e0e0;
+}
+
+.dark .bg-synjoint-blue {
+  background-color: #0d6efd;
+}
+
+.dark .bg-gray-900 {
+  background-color: #1e1e2f;
+}
+
+.dark .bg-gray-800 {
+  background-color: #272a3f;
+}
+
+.dark .bg-gray-700 {
+  background-color: #32365f;
+}
+
+.dark .border-gray-700 {
+  border-color: #32365f;
+}
+
+.dark .text-gray-200 {
+  color: #e0e0e0;
+}
+
+.dark .text-gray-300 {
+  color: #d0d0d0;
+}
+
+.dark .text-gray-400 {
+  color: #a0a0a0;
+}
+
+.dark a:not(.btn) {
+  color: #4AA3CC;
+}
+
+.dark a:hover:not(.btn) {
+  color: #79c2e0;
 }

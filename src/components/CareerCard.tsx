@@ -6,10 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MapPin, Calendar } from "lucide-react";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import ApplyResumeUpload from "./ApplyResumeUpload";
 import ApplyFileUpload from "./ApplyFileUpload";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/utils/supabase";
 
 interface CareerCardProps {
   id: string;
@@ -31,7 +31,6 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const { toast } = useToast();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -67,12 +66,30 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
     setIsSubmitting(true);
 
     try {
+      // Save application data to the database (excluding resume)
+      const { data: applicationData, error: applicationError } = await supabase
+        .from('job_applications')
+        .insert({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone || null,
+          position: title,
+          message: formData.message,
+          status: 'new',
+          created_at: new Date().toISOString()
+        })
+        .select();
+      
+      if (applicationError) throw applicationError;
+      
+      // Send email with application details and attachments
       const formDataToSend = new FormData();
       formDataToSend.append('name', formData.name);
       formDataToSend.append('email', formData.email);
       formDataToSend.append('phone', formData.phone || '');
       formDataToSend.append('position', title);
       formDataToSend.append('message', formData.message);
+      formDataToSend.append('recipientEmail', 'ayushjadaun03@gmail.com');
       
       if (resumeFile) {
         formDataToSend.append('resume', resumeFile);
@@ -82,17 +99,15 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
         formDataToSend.append('image', imageFile);
       }
       
-      const { data, error } = await supabase.functions.invoke('career-apply', {
+      const { data, error } = await supabase.functions.invoke('send-application-email', {
         body: formDataToSend
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error sending email:", error);
+      }
 
-      toast({
-        title: "Application submitted",
-        description: "Thank you. We'll contact you soon.",
-        duration: 5000
-      });
+      toast.success("Your application has been submitted! We'll review it soon.");
 
       setFormData({
         name: "",
@@ -105,11 +120,7 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
       setIsOpen(false);
     } catch (error) {
       console.error("Error submitting application:", error);
-      toast({
-        title: "Failed to submit application",
-        description: error instanceof Error ? error.message : "Please try again later",
-        variant: "destructive"
-      });
+      toast.error("Failed to submit application. Please try again later.");
     } finally {
       setIsSubmitting(false);
     }

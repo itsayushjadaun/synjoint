@@ -1,15 +1,19 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, Briefcase, Users, ArrowRight, Mail, Phone, Download, ExternalLink } from "lucide-react";
+import { FileText, Briefcase, Users, ArrowRight, Mail, Phone, Download, ExternalLink, Trash } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { supabase } from "@/utils/supabase";
+import ViewApplicationModal from "@/components/ViewApplicationModal";
+import ViewMessageModal from "@/components/ViewMessageModal";
+import DeleteConfirmationDialog from "@/components/DeleteConfirmationDialog";
 
 type JobApplication = {
   id: string;
@@ -27,19 +31,47 @@ type ContactMessage = {
   id: string;
   name: string;
   email: string;
-  phone?: string; // Add phone field as optional since it might not exist in all records
+  phone?: string;
   message: string;
   created_at: string;
 };
 
+type Blog = {
+  id: string;
+  title: string;
+  content: string;
+  image_url: string;
+  author_id: string;
+  author_name: string;
+  created_at: string;
+};
+
+type Career = {
+  id: string;
+  title: string;
+  description: string;
+  requirements: string[];
+  location: string;
+  created_at: string;
+};
+
 const AdminDashboard = () => {
-  const { user, blogs, careers } = useAuth();
+  const { user, blogs, careers, refreshBlogs, refreshCareers } = useAuth();
   const navigate = useNavigate();
   
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [contactMessages, setContactMessages] = useState<ContactMessage[]>([]);
   const [loading, setLoading] = useState(true);
   
+  // Selected items for viewing
+  const [selectedApplication, setSelectedApplication] = useState<JobApplication | null>(null);
+  const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
+  
+  // Delete confirmation state
+  const [deleteItemId, setDeleteItemId] = useState<string | null>(null);
+  const [deleteItemType, setDeleteItemType] = useState<'blog' | 'career' | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   useEffect(() => {
     if (!user || user.role !== 'admin') {
       navigate('/');
@@ -49,7 +81,7 @@ const AdminDashboard = () => {
         
         try {
           const { data: appData, error: appError } = await supabase
-            .from('job_applications' as const)
+            .from('job_applications')
             .select('*')
             .order('created_at', { ascending: false });
             
@@ -70,7 +102,7 @@ const AdminDashboard = () => {
             .subscribe();
             
           const { data: contactData, error: contactError } = await supabase
-            .from('contacts' as const)
+            .from('contacts')
             .select('*')
             .order('created_at', { ascending: false });
             
@@ -102,7 +134,7 @@ const AdminDashboard = () => {
       
       const fetchJobApplications = async () => {
         const { data, error } = await supabase
-          .from('job_applications' as const)
+          .from('job_applications')
           .select('*')
           .order('created_at', { ascending: false });
           
@@ -113,7 +145,7 @@ const AdminDashboard = () => {
       
       const fetchContactMessages = async () => {
         const { data, error } = await supabase
-          .from('contacts' as const)
+          .from('contacts')
           .select('*')
           .order('created_at', { ascending: false });
           
@@ -125,6 +157,67 @@ const AdminDashboard = () => {
       fetchData();
     }
   }, [user, navigate]);
+  
+  const updateApplicationStatus = async (id: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('job_applications')
+        .update({ status: newStatus })
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      // Update local state
+      setApplications(prevApplications => 
+        prevApplications.map(app => 
+          app.id === id ? { ...app, status: newStatus } : app
+        )
+      );
+      
+      toast.success("Application status updated successfully");
+    } catch (error) {
+      console.error("Error updating application status:", error);
+      toast.error("Failed to update application status");
+    }
+  };
+
+  const handleDeleteItem = async () => {
+    if (!deleteItemId || !deleteItemType) return;
+    
+    setIsDeleting(true);
+    
+    try {
+      if (deleteItemType === 'blog') {
+        const { error } = await supabase
+          .from('blogs')
+          .delete()
+          .eq('id', deleteItemId);
+          
+        if (error) throw error;
+        
+        toast.success("Blog deleted successfully");
+        refreshBlogs();
+      } 
+      else if (deleteItemType === 'career') {
+        const { error } = await supabase
+          .from('careers')
+          .delete()
+          .eq('id', deleteItemId);
+          
+        if (error) throw error;
+        
+        toast.success("Job posting deleted successfully");
+        refreshCareers();
+      }
+    } catch (error) {
+      console.error("Error deleting item:", error);
+      toast.error("Failed to delete item");
+    } finally {
+      setIsDeleting(false);
+      setDeleteItemId(null);
+      setDeleteItemType(null);
+    }
+  };
   
   const getStatusBadge = (status: string) => {
     switch(status) {
@@ -140,33 +233,6 @@ const AdminDashboard = () => {
         return <Badge className="bg-red-500">Rejected</Badge>;
       default:
         return <Badge className="bg-gray-500">{status}</Badge>;
-    }
-  };
-  
-  const updateApplicationStatus = async (id: string, newStatus: string) => {
-    try {
-      const { error } = await supabase
-        .from('job_applications' as const)
-        .update({ status: newStatus })
-        .eq('id', id);
-        
-      if (error) throw error;
-      
-      const { data } = await supabase
-        .from('job_applications' as const)
-        .select('*')
-        .order('created_at', { ascending: false });
-        
-      if (data) {
-        setApplications(data);
-      }
-    } catch (error) {
-      console.error("Error updating application status:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update application status",
-        variant: "destructive"
-      });
     }
   };
   
@@ -257,6 +323,8 @@ const AdminDashboard = () => {
         <Tabs defaultValue="recent">
           <TabsList className="mb-6">
             <TabsTrigger value="recent">Recent Activity</TabsTrigger>
+            <TabsTrigger value="blogs">Blog Posts</TabsTrigger>
+            <TabsTrigger value="careers">Job Listings</TabsTrigger>
             <TabsTrigger value="applications" id="applications-tab">Job Applications</TabsTrigger>
             <TabsTrigger value="messages" id="messages-tab">Contact Messages</TabsTrigger>
           </TabsList>
@@ -275,8 +343,7 @@ const AdminDashboard = () => {
                     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
                     .slice(0, 5)
                     .map((item) => {
-                      // Properly type the item to avoid 'property name does not exist on type never'
-                      const typedItem = item as any; // Using any here as a temporary solution to avoid the type error
+                      const typedItem = item as any;
                       return (
                         <div key={typedItem.id} className="flex items-center pb-4 border-b">
                           {'content' in typedItem ? (
@@ -312,6 +379,113 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
           
+          <TabsContent value="blogs">
+            <Card>
+              <CardHeader>
+                <CardTitle>Blog Posts</CardTitle>
+                <CardDescription>
+                  Manage your blog posts
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {blogs.length > 0 ? (
+                  <div className="divide-y">
+                    {blogs.map((blog) => (
+                      <div key={blog.id} className="py-4 flex justify-between items-center">
+                        <div>
+                          <h3 className="font-semibold">{blog.title}</h3>
+                          <p className="text-sm text-gray-500">
+                            Published: {new Date(blog.created_at).toLocaleDateString()}
+                            {blog.author_name && ` • By: ${blog.author_name}`}
+                          </p>
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            asChild
+                          >
+                            <Link to={`/blog/${blog.id}`}>View</Link>
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="destructive"
+                            onClick={() => {
+                              setDeleteItemId(blog.id);
+                              setDeleteItemType('blog');
+                            }}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No blog posts yet</p>
+                    <Button className="mt-4" asChild>
+                      <Link to="/admin/create-blog">Create Your First Blog Post</Link>
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="careers">
+            <Card>
+              <CardHeader>
+                <CardTitle>Job Listings</CardTitle>
+                <CardDescription>
+                  Manage your career opportunities
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {careers.length > 0 ? (
+                  <div className="divide-y">
+                    {careers.map((career) => (
+                      <div key={career.id} className="py-4 flex justify-between items-center">
+                        <div>
+                          <h3 className="font-semibold">{career.title}</h3>
+                          <p className="text-sm text-gray-500">
+                            Location: {career.location} • Posted: {new Date(career.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            asChild
+                          >
+                            <Link to={`/careers`}>View</Link>
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="destructive"
+                            onClick={() => {
+                              setDeleteItemId(career.id);
+                              setDeleteItemType('career');
+                            }}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No job listings yet</p>
+                    <Button className="mt-4" asChild>
+                      <Link to="/admin/create-career">Post Your First Job</Link>
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
           <TabsContent value="applications">
             <Card>
               <CardHeader>
@@ -327,78 +501,41 @@ const AdminDashboard = () => {
                     <p className="mt-4 text-gray-500">Loading applications...</p>
                   </div>
                 ) : applications.length > 0 ? (
-                  <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {applications.map((app) => (
                       <div key={app.id} className="border rounded-lg p-4 dark:border-gray-700">
-                        <div className="flex flex-wrap justify-between items-start gap-2">
+                        <div className="flex flex-wrap justify-between items-start gap-2 mb-3">
                           <div>
                             <div className="flex items-center gap-2">
-                              <h3 className="font-semibold text-lg">{app.name}</h3>
+                              <h3 className="font-semibold">{app.name}</h3>
                               {getStatusBadge(app.status)}
                             </div>
                             <p className="text-sm text-gray-500">
                               Applied for: <span className="font-medium text-synjoint-blue">{app.position}</span>
                             </p>
                           </div>
-                          <div className="text-right">
-                            <p className="text-sm text-gray-500">
-                              {new Date(app.created_at).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                              })}
-                            </p>
+                          <div className="text-right text-xs text-gray-500">
+                            {new Date(app.created_at).toLocaleDateString()}
                           </div>
                         </div>
                         
-                        <div className="mt-3 space-y-2">
-                          <p className="flex items-center text-sm">
-                            <Mail className="h-4 w-4 mr-2 text-gray-400" />
-                            <a href={`mailto:${app.email}`} className="text-synjoint-blue hover:underline">
-                              {app.email}
-                            </a>
-                          </p>
-                          {app.phone && (
-                            <p className="flex items-center text-sm">
-                              <Phone className="h-4 w-4 mr-2 text-gray-400" />
-                              <a href={`tel:${app.phone}`} className="text-synjoint-blue hover:underline">
-                                {app.phone}
-                              </a>
-                            </p>
-                          )}
+                        <div className="flex items-center text-sm mb-3">
+                          <Mail className="h-4 w-4 mr-2 text-gray-400" />
+                          <span className="truncate">{app.email}</span>
                         </div>
                         
-                        <div className="mt-4">
-                          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Cover Letter/Message:</p>
-                          <p className="mt-1 text-gray-600 dark:text-gray-400 whitespace-pre-line">{app.message}</p>
-                        </div>
-                        
-                        {app.resume_url && (
-                          <div className="mt-4 flex gap-2">
-                            <a 
-                              href={app.resume_url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-synjoint-blue hover:underline flex items-center"
-                            >
-                              <ExternalLink className="h-4 w-4 mr-2" />
-                              View Resume
-                            </a>
-                            <a 
-                              href={app.resume_url} 
-                              download
-                              className="text-synjoint-blue hover:underline flex items-center"
-                            >
-                              <Download className="h-4 w-4 mr-2" />
-                              Download
-                            </a>
-                          </div>
-                        )}
-                        
-                        <div className="mt-4 flex flex-wrap gap-2">
+                        <div className="flex justify-between mt-3">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedApplication(app)}
+                          >
+                            View Details
+                          </Button>
+                          
                           <select 
-                            className="px-3 py-1 border rounded text-sm"
-                            value={app.status || 'new'}
+                            className="px-2 py-1 text-xs border rounded"
+                            value={app.status}
                             onChange={(e) => updateApplicationStatus(app.id, e.target.value)}
                           >
                             <option value="new">New</option>
@@ -407,14 +544,6 @@ const AdminDashboard = () => {
                             <option value="hired">Hired</option>
                             <option value="rejected">Rejected</option>
                           </select>
-                          
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => window.location.href = `mailto:${app.email}?subject=Re: Your application for ${app.position}&body=Dear ${app.name},%0A%0A`}
-                          >
-                            Reply via Email
-                          </Button>
                         </div>
                       </div>
                     ))}
@@ -443,51 +572,35 @@ const AdminDashboard = () => {
                     <p className="mt-4 text-gray-500">Loading messages...</p>
                   </div>
                 ) : contactMessages.length > 0 ? (
-                  <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {contactMessages.map((msg) => (
                       <div key={msg.id} className="border rounded-lg p-4 dark:border-gray-700">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-semibold text-lg">{msg.name}</h3>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-sm text-gray-500">
-                              {new Date(msg.created_at).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </p>
+                        <div className="flex justify-between items-start mb-3">
+                          <h3 className="font-semibold">{msg.name}</h3>
+                          <div className="text-xs text-gray-500">
+                            {new Date(msg.created_at).toLocaleDateString()}
                           </div>
                         </div>
                         
-                        <div className="mt-3 space-y-2">
-                          <p className="flex items-center text-sm">
-                            <Mail className="h-4 w-4 mr-2 text-gray-400" />
-                            <a href={`mailto:${msg.email}`} className="text-synjoint-blue hover:underline">
-                              {msg.email}
-                            </a>
-                          </p>
-                          {msg.phone && (
-                            <p className="flex items-center text-sm">
-                              <Phone className="h-4 w-4 mr-2 text-gray-400" />
-                              <a href={`tel:${msg.phone}`} className="text-synjoint-blue hover:underline">
-                                {msg.phone}
-                              </a>
-                            </p>
-                          )}
+                        <div className="flex items-center text-sm mb-3">
+                          <Mail className="h-4 w-4 mr-2 text-gray-400" />
+                          <span className="truncate">{msg.email}</span>
                         </div>
                         
-                        <div className="mt-4">
-                          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Message:</p>
-                          <p className="mt-1 text-gray-600 dark:text-gray-400 whitespace-pre-line">{msg.message}</p>
-                        </div>
+                        <p className="text-sm line-clamp-2 mb-3 text-gray-700 dark:text-gray-300">
+                          {msg.message}
+                        </p>
                         
-                        <div className="mt-4 flex justify-end">
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSelectedMessage(msg)}
+                          >
+                            View Message
+                          </Button>
+                          
                           <Button 
-                            variant="outline" 
                             size="sm"
                             onClick={() => window.location.href = `mailto:${msg.email}?subject=Re: Your message to SYNJOINT`}
                           >
@@ -507,6 +620,37 @@ const AdminDashboard = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Modals */}
+      {selectedApplication && (
+        <ViewApplicationModal
+          application={selectedApplication}
+          isOpen={!!selectedApplication}
+          onClose={() => setSelectedApplication(null)}
+          onStatusChange={updateApplicationStatus}
+        />
+      )}
+
+      {selectedMessage && (
+        <ViewMessageModal
+          message={selectedMessage}
+          isOpen={!!selectedMessage}
+          onClose={() => setSelectedMessage(null)}
+        />
+      )}
+
+      {/* Delete confirmation dialog */}
+      <DeleteConfirmationDialog
+        isOpen={!!deleteItemId}
+        onClose={() => {
+          setDeleteItemId(null);
+          setDeleteItemType(null);
+        }}
+        onConfirm={handleDeleteItem}
+        title={`Delete ${deleteItemType === 'blog' ? 'Blog Post' : 'Job Listing'}`}
+        description={`Are you sure you want to delete this ${deleteItemType === 'blog' ? 'blog post' : 'job listing'}? This action cannot be undone.`}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 };
