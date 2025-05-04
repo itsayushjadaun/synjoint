@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { SMTPClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts";
+import * as smtp from "https://deno.land/x/smtp@v0.7.0/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,16 +21,13 @@ interface ApplicationData {
 // Function to send email with resume attachment
 async function sendEmailWithResume(data: ApplicationData) {
   try {
-    const client = new SMTPClient({
-      connection: {
-        hostname: "smtp.gmail.com",
-        port: 465,
-        tls: true,
-        auth: {
-          username: "jadaunayush3@gmail.com",
-          password: "Bharatpur@123",
-        },
-      },
+    const client = new smtp.SmtpClient();
+    
+    await client.connectTLS({
+      hostname: "smtp.gmail.com",
+      port: 465,
+      username: "jadaunayush3@gmail.com",
+      password: "Bharatpur@123",
     });
     
     const emailHtml = `
@@ -100,9 +97,10 @@ async function sendEmailWithResume(data: ApplicationData) {
       to: "ayushjadaun03@gmail.com",
       subject: `New Job Application: ${data.position} - ${data.name}`,
       html: emailHtml,
-      attachments: attachments.length > 0 ? attachments : undefined
+      attachments: attachments
     });
 
+    await client.close();
     console.log("Email sent successfully via SMTP");
     return { success: true };
   } catch (error) {

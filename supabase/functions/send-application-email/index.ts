@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { SMTPClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts";
+import * as smtp from "https://deno.land/x/smtp@v0.7.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -28,16 +28,13 @@ serve(async (req) => {
     const resume = formData.get('resume') as File;
     const image = formData.get('image') as File;
 
-    const client = new SMTPClient({
-      connection: {
-        hostname: "smtp.gmail.com",
-        port: 465,
-        tls: true,
-        auth: {
-          username: "jadaunayush3@gmail.com",
-          password: "Bharatpur@123",
-        },
-      },
+    const client = new smtp.SmtpClient();
+    
+    await client.connectTLS({
+      hostname: "smtp.gmail.com",
+      port: 465,
+      username: "jadaunayush3@gmail.com",
+      password: "Bharatpur@123",
     });
     
     const emailHtml = `
@@ -110,9 +107,10 @@ serve(async (req) => {
       to: recipientEmail,
       subject: `New Job Application: ${position} - ${name}`,
       html: emailHtml,
-      attachments: attachments.length > 0 ? attachments : undefined
+      attachments: attachments
     });
 
+    await client.close();
     console.log("Application email sent successfully via SMTP");
     
     return new Response(
