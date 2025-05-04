@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import * as smtp from "https://deno.land/x/smtp@v0.7.0/mod.ts";
+import nodemailer from "npm:nodemailer";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,13 +21,14 @@ interface ApplicationData {
 // Function to send email with resume attachment
 async function sendEmailWithResume(data: ApplicationData) {
   try {
-    const client = new smtp.SmtpClient();
-    
-    await client.connectTLS({
-      hostname: "smtp.gmail.com",
-      port: 465,
-      username: "jadaunayush3@gmail.com",
-      password: "Bharatpur@123",
+    // Create Nodemailer transporter
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: "jadaunayush3@gmail.com",
+        pass: "Bharatpur@123",
+      },
+      secure: true,
     });
     
     const emailHtml = `
@@ -92,17 +93,19 @@ async function sendEmailWithResume(data: ApplicationData) {
       });
     }
 
-    await client.send({
-      from: "jadaunayush3@gmail.com",
+    console.log("Sending email with nodemailer to: ayushjadaun03@gmail.com");
+    
+    // Send mail with defined transport object
+    const info = await transporter.sendMail({
+      from: '"Synjoint Careers" <jadaunayush3@gmail.com>',
       to: "ayushjadaun03@gmail.com",
       subject: `New Job Application: ${data.position} - ${data.name}`,
       html: emailHtml,
       attachments: attachments
     });
 
-    await client.close();
-    console.log("Email sent successfully via SMTP");
-    return { success: true };
+    console.log("Email sent successfully via Nodemailer:", info.messageId);
+    return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error("Error sending email:", error);
     return { success: false, error: error instanceof Error ? error.message : "Unknown error" };

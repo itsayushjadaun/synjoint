@@ -1,6 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import * as smtp from "https://deno.land/x/smtp@v0.7.0/mod.ts";
+import nodemailer from "npm:nodemailer";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -28,13 +28,14 @@ serve(async (req) => {
     const resume = formData.get('resume') as File;
     const image = formData.get('image') as File;
 
-    const client = new smtp.SmtpClient();
-    
-    await client.connectTLS({
-      hostname: "smtp.gmail.com",
-      port: 465,
-      username: "jadaunayush3@gmail.com",
-      password: "Bharatpur@123",
+    // Create Nodemailer transporter
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: "jadaunayush3@gmail.com",
+        pass: "Bharatpur@123", 
+      },
+      secure: true,
     });
     
     const emailHtml = `
@@ -102,19 +103,24 @@ serve(async (req) => {
       });
     }
 
-    await client.send({
-      from: "jadaunayush3@gmail.com",
+    console.log("Sending email with nodemailer to:", recipientEmail);
+    
+    // Send mail with defined transport object
+    const info = await transporter.sendMail({
+      from: '"Synjoint Careers" <jadaunayush3@gmail.com>',
       to: recipientEmail,
       subject: `New Job Application: ${position} - ${name}`,
       html: emailHtml,
       attachments: attachments
     });
 
-    await client.close();
-    console.log("Application email sent successfully via SMTP");
+    console.log("Application email sent successfully via Nodemailer:", info.messageId);
     
     return new Response(
-      JSON.stringify({ success: true }),
+      JSON.stringify({ 
+        success: true,
+        messageId: info.messageId 
+      }),
       { 
         status: 200,
         headers: { 
