@@ -35,15 +35,15 @@ serve(async (req) => {
     console.log("Image file present:", !!image);
 
     // Create Nodemailer transporter using app password for Gmail
-    // Using jadaunayush2@gmail.com as sender with app password
+    // Using jadaunayush3@gmail.com with its app password
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
       port: 587,
       secure: false, // Use TLS
       auth: {
-        user: "jadaunayush2@gmail.com",
-        // Using the App Password instead of regular password
-        pass: "udaipur@123", 
+        user: "jadaunayush3@gmail.com",
+        // Using the App Password provided by the user
+        pass: "ninp movv pyvw gyoq", 
       },
     });
     
@@ -116,7 +116,7 @@ serve(async (req) => {
     
     // Send mail with defined transport object
     const info = await transporter.sendMail({
-      from: '"Synjoint Careers" <jadaunayush2@gmail.com>',
+      from: '"Synjoint Careers" <jadaunayush3@gmail.com>',
       to: recipientEmail,
       subject: `New Job Application: ${position} - ${name}`,
       html: emailHtml,

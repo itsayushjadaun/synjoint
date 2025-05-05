@@ -27,9 +27,9 @@ async function sendEmailWithResume(data: ApplicationData) {
       port: 587,
       secure: false, // Use TLS
       auth: {
-        user: "jadaunayush2@gmail.com",
-        // Using App Password instead of regular password
-        pass: "udaipur@123",
+        user: "jadaunayush3@gmail.com",
+        // Using the App Password provided by the user
+        pass: "ninp movv pyvw gyoq",
       },
     });
     
@@ -99,7 +99,7 @@ async function sendEmailWithResume(data: ApplicationData) {
     
     // Send mail with defined transport object
     const info = await transporter.sendMail({
-      from: '"Synjoint Careers" <jadaunayush2@gmail.com>',
+      from: '"Synjoint Careers" <jadaunayush3@gmail.com>',
       to: "jadaunayush3@gmail.com", // Fixed recipient email
       subject: `New Job Application: ${data.position} - ${data.name}`,
       html: emailHtml,
