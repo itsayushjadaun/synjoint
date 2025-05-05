@@ -22,21 +22,25 @@ serve(async (req) => {
     const phone = formData.get('phone') as string || 'Not provided';
     const position = formData.get('position') as string;
     const message = formData.get('message') as string;
-    const recipientEmail = formData.get('recipientEmail') as string || 'ayushjadaun03@gmail.com';
+    const recipientEmail = formData.get('recipientEmail') as string || 'jadaunayush3@gmail.com';
     
     // Get files
     const resume = formData.get('resume') as File;
     const image = formData.get('image') as File;
 
-    // Create Nodemailer transporter using OAuth2 instead of direct password
+    console.log("Received application form:", { name, email, position, recipientEmail });
+    console.log("Resume file present:", !!resume);
+    console.log("Image file present:", !!image);
+
+    // Create Nodemailer transporter using app password for Gmail
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
       port: 587,
       secure: false, // Use TLS
       auth: {
         user: "jadaunayush3@gmail.com",
-        // For security, in production you should use app password, not regular password
-        pass: "Bharatpur@123", 
+        // Use an app password generated from Google Account settings
+        pass: "qvsbhcggdlnkuzcv", 
       },
     });
     

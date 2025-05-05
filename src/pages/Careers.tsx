@@ -13,8 +13,10 @@ const Careers = () => {
   const isAdmin = user?.role === 'admin';
   
   useEffect(() => {
+    // Only fetch careers data once when the component mounts
     refreshCareers();
-  }, [refreshCareers]);
+    // Empty dependency array ensures this only runs once on mount
+  }, []);
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
