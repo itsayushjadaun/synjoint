@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import nodemailer from "npm:nodemailer";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -55,15 +56,75 @@ serve(async (req) => {
       throw new Error("Failed to save your message");
     }
 
-    // Send email notification to admin
-    // In a production environment, you would integrate with an email service
-    // like Resend.com, SendGrid, etc.
-    console.log(`Contact form submission from ${name} (${email}): ${message}`);
+    // Send email notification to the admin
+    // Create Nodemailer transporter using app password for Gmail
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false, // Use TLS
+      auth: {
+        user: "jadaunayush3@gmail.com",
+        pass: "ninp movv pyvw gyoq", // Using the App Password provided by the user
+      },
+    });
+
+    // Prepare email content
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background-color: #006B9F; color: white; padding: 10px 20px; border-radius: 5px; margin-bottom: 20px; }
+          .section { margin-bottom: 20px; }
+          .label { font-weight: bold; }
+          .footer { font-size: 12px; color: #666; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>New Contact Form Submission</h1>
+          </div>
+          
+          <div class="section">
+            <p class="label">Contact Details:</p>
+            <p>Name: ${name}</p>
+            <p>Email: ${email}</p>
+            <p>Phone: ${phone || 'Not provided'}</p>
+          </div>
+          
+          <div class="section">
+            <p class="label">Message:</p>
+            <p>${message.replace(/\n/g, '<br>')}</p>
+          </div>
+          
+          <div class="footer">
+            <p>This is an automated email from the SYNJOINT contact form system.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    console.log("Sending contact form email to:", "jadaunayush3@gmail.com");
+
+    const info = await transporter.sendMail({
+      from: '"Synjoint Contact" <jadaunayush3@gmail.com>',
+      to: "jadaunayush3@gmail.com", // Fixed recipient email
+      subject: `New Contact Form Submission - ${name}`,
+      html: emailHtml,
+    });
+
+    console.log("Contact form email sent successfully:", info.messageId);
 
     return new Response(
       JSON.stringify({
         success: true,
         message: "Your message has been sent successfully",
+        emailSent: true,
+        messageId: info.messageId
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

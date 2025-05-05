@@ -17,6 +17,7 @@ import Careers from "./pages/Careers";
 import Contact from "./pages/Contact";
 import Academy from "./pages/Academy";
 import Blogs from "./pages/Blogs";
+import BlogPost from "./pages/BlogPost";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -97,6 +98,7 @@ const App = () => {
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/academy" element={<Academy />} />
                 <Route path="/blogs" element={<Blogs />} />
+                <Route path="/blog/:id" element={<BlogPost />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/create-blog" element={<CreateBlog />} />

@@ -171,7 +171,7 @@ const Contact = () => {
                       rows={6}
                       value={formData.message}
                       onChange={handleChange}
-                      className="w-full dark:bg-gray-700 dark:border-gray-600"
+                      className="w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       disabled={isSubmitting}
                       required
                     />

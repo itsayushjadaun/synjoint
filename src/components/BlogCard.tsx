@@ -77,13 +77,16 @@ const BlogCard = ({
 
   return (
     <>
-      <Link to={`/blog/${id}`}>
+      <Link to={`/blog/${id}`} className="block h-full">
         <Card className="h-full overflow-hidden transition-transform duration-300 hover:shadow-lg hover:-translate-y-1 dark:bg-gray-800 dark:border-gray-700">
           <div className="relative h-48 w-full">
             <img
               src={image_url || '/placeholder.svg'}
               alt={title}
               className="h-full w-full object-cover"
+              onError={(e) => {
+                e.currentTarget.src = "/placeholder.svg";
+              }}
             />
             
             {isAdmin && (
