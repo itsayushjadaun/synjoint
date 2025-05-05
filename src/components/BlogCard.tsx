@@ -5,8 +5,8 @@ import { useAuth } from "../context/AuthContext";
 import { Trash } from "lucide-react";
 import { useState } from "react";
 import DeleteConfirmationDialog from "./DeleteConfirmationDialog";
-import { supabase } from "@/utils/supabase";
-import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/components/ui/use-toast";
 
 interface BlogCardProps {
   id: string;
@@ -60,7 +60,11 @@ const BlogCard = ({
         
       if (error) throw error;
       
-      toast.success("Blog post deleted successfully");
+      toast({
+        title: "Success",
+        description: "Blog post deleted successfully",
+      });
+      
       if (onDelete) {
         onDelete();
       } else {
@@ -68,7 +72,11 @@ const BlogCard = ({
       }
     } catch (error) {
       console.error('Error deleting blog post:', error);
-      toast.error("Failed to delete blog post");
+      toast({
+        title: "Error",
+        description: "Failed to delete blog post",
+        variant: "destructive",
+      });
     } finally {
       setIsDeleting(false);
       setShowDeleteDialog(false);

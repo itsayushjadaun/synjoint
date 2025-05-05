@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 
 const Blogs = () => {
   const { user, blogs: contextBlogs, refreshBlogs } = useAuth();
@@ -27,7 +27,11 @@ const Blogs = () => {
         
       if (error) {
         console.error("Error fetching blogs:", error);
-        toast.error("Failed to load blog posts");
+        toast({
+          title: "Error",
+          description: "Failed to load blog posts",
+          variant: "destructive",
+        });
       } else {
         console.log("Blogs fetched successfully:", data);
         setBlogs(data);
