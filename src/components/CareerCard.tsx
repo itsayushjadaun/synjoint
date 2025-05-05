@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -68,7 +69,6 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
       formDataToSend.append('phone', formData.phone || '');
       formDataToSend.append('position', title);
       formDataToSend.append('message', formData.message);
-      formDataToSend.append('recipientEmail', 'jadaunayush3@gmail.com'); // Set the recipient email explicitly
       
       if (resumeFile) {
         formDataToSend.append('resume', resumeFile);
@@ -78,14 +78,24 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
         formDataToSend.append('image', imageFile);
       }
       
-      // Send the application email
-      const { error: emailError } = await supabase.functions.invoke('send-application-email', {
+      // Try primary email method first
+      const { error: primaryError } = await supabase.functions.invoke('send-application-email', {
         body: formDataToSend
       });
 
-      if (emailError) {
-        console.error("Error sending email:", emailError);
-        throw new Error("Failed to send application email");
+      // If primary method fails, try fallback method
+      if (primaryError) {
+        console.error("Error sending email via primary method:", primaryError);
+        console.log("Trying fallback email method...");
+        
+        const { error: fallbackError } = await supabase.functions.invoke('career-apply', {
+          body: formDataToSend
+        });
+        
+        if (fallbackError) {
+          console.error("Error sending email via fallback method:", fallbackError);
+          throw new Error("Failed to send application via both methods");
+        }
       }
 
       // Save application data to the database

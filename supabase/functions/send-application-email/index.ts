@@ -22,7 +22,9 @@ serve(async (req) => {
     const phone = formData.get('phone') as string || 'Not provided';
     const position = formData.get('position') as string;
     const message = formData.get('message') as string;
-    const recipientEmail = formData.get('recipientEmail') as string || 'jadaunayush3@gmail.com';
+    
+    // Always set recipient to jadaunayush3@gmail.com per requirements
+    const recipientEmail = 'jadaunayush3@gmail.com';
     
     // Get files
     const resume = formData.get('resume') as File;
@@ -33,14 +35,15 @@ serve(async (req) => {
     console.log("Image file present:", !!image);
 
     // Create Nodemailer transporter using app password for Gmail
+    // Using jadaunayush2@gmail.com as sender with app password
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
       port: 587,
       secure: false, // Use TLS
       auth: {
-        user: "jadaunayush3@gmail.com",
-        // Use an app password generated from Google Account settings
-        pass: "qvsbhcggdlnkuzcv", 
+        user: "jadaunayush2@gmail.com",
+        // Using the App Password instead of regular password
+        pass: "udaipur@123", 
       },
     });
     
@@ -113,7 +116,7 @@ serve(async (req) => {
     
     // Send mail with defined transport object
     const info = await transporter.sendMail({
-      from: '"Synjoint Careers" <jadaunayush3@gmail.com>',
+      from: '"Synjoint Careers" <jadaunayush2@gmail.com>',
       to: recipientEmail,
       subject: `New Job Application: ${position} - ${name}`,
       html: emailHtml,
