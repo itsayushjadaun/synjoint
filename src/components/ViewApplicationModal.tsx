@@ -16,7 +16,7 @@ interface ViewApplicationModalProps {
     phone?: string;
     position: string;
     message: string;
-    resume_url: string;
+    resume_url?: string; // Changed to optional
     photo_url?: string;
     status: 'pending' | 'reviewed' | 'contacted' | 'rejected' | 'hired';
     created_at: string;
@@ -106,34 +106,36 @@ const ViewApplicationModal = ({
             </div>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <h4 className="font-medium mb-2 text-gray-900 dark:text-white">Resume:</h4>
-              <a 
-                href={application.resume_url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="block p-4 bg-gray-50 dark:bg-gray-800 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              >
-                <div className="flex items-center justify-center h-32 text-synjoint-blue dark:text-blue-400 hover:underline">
-                  View Resume
-                </div>
-              </a>
-            </div>
-            
-            {application.photo_url && (
+          {application.resume_url && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <h4 className="font-medium mb-2 text-gray-900 dark:text-white">Photo:</h4>
-                <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
-                  <img 
-                    src={application.photo_url} 
-                    alt={`${application.name}'s photo`}
-                    className="w-full h-32 object-contain rounded"
-                  />
-                </div>
+                <h4 className="font-medium mb-2 text-gray-900 dark:text-white">Resume:</h4>
+                <a 
+                  href={application.resume_url} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="block p-4 bg-gray-50 dark:bg-gray-800 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <div className="flex items-center justify-center h-32 text-synjoint-blue dark:text-blue-400 hover:underline">
+                    View Resume
+                  </div>
+                </a>
               </div>
-            )}
-          </div>
+              
+              {application.photo_url && (
+                <div>
+                  <h4 className="font-medium mb-2 text-gray-900 dark:text-white">Photo:</h4>
+                  <div className="p-2 bg-gray-50 dark:bg-gray-800 rounded-md">
+                    <img 
+                      src={application.photo_url} 
+                      alt={`${application.name}'s photo`}
+                      className="w-full h-32 object-contain rounded"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           
           {onStatusChange && (
             <div>

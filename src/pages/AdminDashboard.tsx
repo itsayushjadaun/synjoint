@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -22,7 +21,7 @@ type JobApplication = {
   phone?: string;
   position: string;
   message: string;
-  resume_url?: string;
+  resume_url?: string; // Marked as optional to match ViewApplicationModal
   status: string;
   created_at: string;
 };
