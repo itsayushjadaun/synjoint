@@ -22,7 +22,8 @@ type JobApplication = {
   position: string;
   message: string;
   resume_url?: string; // Marked as optional to match ViewApplicationModal
-  status: string;
+  photo_url?: string;  // Added to ensure type consistency
+  status: 'pending' | 'reviewed' | 'contacted' | 'rejected' | 'hired' | 'new' | 'interviewing'; // Updated to match the union type plus existing values
   created_at: string;
 };
 
@@ -159,6 +160,13 @@ const AdminDashboard = () => {
   
   const updateApplicationStatus = async (id: string, newStatus: string) => {
     try {
+      // We need to validate that the status is one of the allowed values
+      const validStatuses = ['pending', 'reviewed', 'contacted', 'rejected', 'hired', 'new', 'interviewing'];
+      
+      if (!validStatuses.includes(newStatus)) {
+        throw new Error(`Invalid status: ${newStatus}`);
+      }
+      
       const { error } = await supabase
         .from('job_applications')
         .update({ status: newStatus })
@@ -169,7 +177,7 @@ const AdminDashboard = () => {
       // Update local state
       setApplications(prevApplications => 
         prevApplications.map(app => 
-          app.id === id ? { ...app, status: newStatus } : app
+          app.id === id ? { ...app, status: newStatus as JobApplication['status'] } : app
         )
       );
       

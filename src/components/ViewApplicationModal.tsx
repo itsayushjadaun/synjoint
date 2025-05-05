@@ -1,4 +1,3 @@
-
 import { Mail, Phone, Calendar } from "lucide-react";
 import {
   Dialog,
@@ -16,9 +15,9 @@ interface ViewApplicationModalProps {
     phone?: string;
     position: string;
     message: string;
-    resume_url?: string; // Changed to optional
+    resume_url?: string; // Optional
     photo_url?: string;
-    status: 'pending' | 'reviewed' | 'contacted' | 'rejected' | 'hired';
+    status: 'pending' | 'reviewed' | 'contacted' | 'rejected' | 'hired' | 'new' | 'interviewing'; // Added 'new' and 'interviewing'
     created_at: string;
   };
   isOpen: boolean;
@@ -39,6 +38,8 @@ const ViewApplicationModal = ({
     contacted: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-200",
     rejected: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200",
     hired: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200",
+    new: "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-200",
+    interviewing: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-200",
   };
   
   const handleStatusChange = (status: string) => {
@@ -166,6 +167,14 @@ const ViewApplicationModal = ({
                   Contacted
                 </Button>
                 <Button 
+                  variant={application.status === 'interviewing' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handleStatusChange('interviewing')}
+                  className={application.status === 'interviewing' ? 'bg-indigo-500 hover:bg-indigo-600' : ''}
+                >
+                  Interviewing
+                </Button>
+                <Button 
                   variant={application.status === 'rejected' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => handleStatusChange('rejected')}
@@ -181,6 +190,16 @@ const ViewApplicationModal = ({
                 >
                   Hired
                 </Button>
+                {application.status === 'new' && (
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleStatusChange('new')}
+                    className="bg-gray-500 hover:bg-gray-600 text-white"
+                  >
+                    New
+                  </Button>
+                )}
               </div>
             </div>
           )}
