@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "../context/AuthContext";
@@ -53,12 +52,16 @@ const BlogCard = ({
   const handleDeleteConfirm = async () => {
     setIsDeleting(true);
     try {
+      // Direct delete query without joining or referencing users table
       const { error } = await supabase
         .from('blogs')
         .delete()
         .eq('id', id);
         
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting blog post:', error);
+        throw error;
+      }
       
       toast({
         title: "Success",
@@ -74,7 +77,7 @@ const BlogCard = ({
       console.error('Error deleting blog post:', error);
       toast({
         title: "Error",
-        description: "Failed to delete blog post",
+        description: "Failed to delete blog post. Please try again.",
         variant: "destructive",
       });
     } finally {

@@ -36,19 +36,19 @@ serve(async (req) => {
       throw new Error("Please provide a valid email address");
     }
 
-    // Store the message in the database
+    // Store the message directly in the contacts table - not using contact_messages
     const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Insert into contacts table 
     const { error: dbError } = await supabase
-      .from("contact_messages")
+      .from("contacts")
       .insert({
         name,
         email,
-        phone: phone || null,
         message,
-        status: "new"
+        // phone field doesn't exist in contacts table so we don't include it
       });
 
     if (dbError) {

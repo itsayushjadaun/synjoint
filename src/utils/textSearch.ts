@@ -153,6 +153,7 @@ export const enhanceSearchWithScroll = (inputElement: HTMLInputElement) => {
       const searchButton = document.createElement('button');
       searchButton.textContent = 'Find';
       searchButton.className = 'px-3 py-1 ml-2 rounded bg-blue-500 text-white text-sm';
+      searchButton.style.marginLeft = '0.5rem'; // Add explicit spacing
       searchButton.onclick = () => {
         const searchTerm = inputElement.value.trim();
         if (searchTerm) {
@@ -165,6 +166,9 @@ export const enhanceSearchWithScroll = (inputElement: HTMLInputElement) => {
       
       // Insert after the input
       inputElement.insertAdjacentElement('afterend', searchButton);
+      
+      // Make sure input and button don't overlap by adding some styling
+      inputElement.style.marginRight = '0.5rem';
     }
   }
 };

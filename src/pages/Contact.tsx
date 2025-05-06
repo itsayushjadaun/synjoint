@@ -1,19 +1,13 @@
-
 import { useState } from "react";
 import { motion } from "framer-motion";
 import Navbar from "../components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast"; // Using shadcn/ui toast for consistent notifications
 import { Mail, Phone, MapPin } from "lucide-react";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
 import Footer from "../components/Footer";
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL || '',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-);
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -32,7 +26,11 @@ const Contact = () => {
     e.preventDefault();
     
     if (!formData.name || !formData.email || !formData.message) {
-      toast.error("Please fill in all fields");
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
       return;
     }
     
@@ -43,13 +41,28 @@ const Contact = () => {
         body: JSON.stringify(formData)
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error submitting contact form:", error);
+        throw error;
+      }
       
-      toast.success("Your message has been sent! We'll get back to you soon.");
+      if (data && !data.success) {
+        throw new Error(data.message || "Failed to send your message");
+      }
+      
+      toast({
+        title: "Success",
+        description: "Your message has been sent! We'll get back to you soon.",
+      });
+      
       setFormData({ name: "", email: "", message: "" });
     } catch (error) {
       console.error("Error submitting contact form:", error);
-      toast.error("Failed to send your message. Please try again later.");
+      toast({
+        title: "Error",
+        description: "Failed to send your message. Please try again later.",
+        variant: "destructive"
+      });
     } finally {
       setIsSubmitting(false);
     }
