@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "../context/AuthContext";
@@ -52,7 +53,7 @@ const BlogCard = ({
   const handleDeleteConfirm = async () => {
     setIsDeleting(true);
     try {
-      // Use the blogAPI from supabase utils to avoid permission issues
+      // Use the RPC function with the correct type specification
       const { error } = await supabase.rpc('delete_blog', { blog_id: id });
       
       if (error) {
