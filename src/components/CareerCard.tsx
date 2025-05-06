@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MapPin, Calendar } from "lucide-react";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { toast } from "sonner";
+import { toast } from "@/components/ui/use-toast";
 import ApplyResumeUpload from "./ApplyResumeUpload";
 import ApplyFileUpload from "./ApplyFileUpload";
 import { supabase } from "@/utils/supabase";
@@ -46,15 +46,19 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
     e.preventDefault();
 
     if (!formData.name || !formData.email || !formData.message) {
-      toast.error("Missing information", {
-        description: "Please fill in all required fields."
+      toast({
+        title: "Missing information",
+        description: "Please fill in all required fields.",
+        variant: "destructive"
       });
       return;
     }
     
     if (!resumeFile) {
-      toast.error("Resume required", {
-        description: "Please upload your resume."
+      toast({
+        title: "Resume required",
+        description: "Please upload your resume.",
+        variant: "destructive"
       });
       return;
     }
@@ -69,6 +73,8 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
       formDataToSend.append('phone', formData.phone || '');
       formDataToSend.append('position', title);
       formDataToSend.append('message', formData.message);
+      formDataToSend.append('admin_email', 'jadaunayush3@gmail.com'); // Add admin email for notification
+      formDataToSend.append('send_applicant_copy', 'true'); // Flag to send copy to applicant
       
       if (resumeFile) {
         formDataToSend.append('resume', resumeFile);
@@ -78,14 +84,14 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
         formDataToSend.append('image', imageFile);
       }
       
-      // Try primary email method first
-      const { error: primaryError } = await supabase.functions.invoke('send-application-email', {
+      // Send application email
+      const { error: emailError } = await supabase.functions.invoke('send-application-email', {
         body: formDataToSend
       });
 
-      // If primary method fails, try fallback method
-      if (primaryError) {
-        console.error("Error sending email via primary method:", primaryError);
+      if (emailError) {
+        console.error("Error sending application email:", emailError);
+        // Try fallback method if primary fails
         console.log("Trying fallback email method...");
         
         const { error: fallbackError } = await supabase.functions.invoke('career-apply', {
@@ -93,8 +99,8 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
         });
         
         if (fallbackError) {
-          console.error("Error sending email via fallback method:", fallbackError);
-          throw new Error("Failed to send application via both methods");
+          console.error("Error with fallback method:", fallbackError);
+          throw new Error("Failed to send application");
         }
       }
 
@@ -113,7 +119,10 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
       
       if (applicationError) throw applicationError;
       
-      toast.success("Your application has been submitted! We'll review it soon.");
+      toast({
+        title: "Application submitted",
+        description: "Your application has been submitted! We'll review it soon.",
+      });
 
       setFormData({
         name: "",
@@ -126,7 +135,11 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
       setIsOpen(false);
     } catch (error) {
       console.error("Error submitting application:", error);
-      toast.error("Failed to submit application. Please try again later.");
+      toast({
+        title: "Submission failed",
+        description: "Failed to submit application. Please try again later.",
+        variant: "destructive"
+      });
     } finally {
       setIsSubmitting(false);
     }

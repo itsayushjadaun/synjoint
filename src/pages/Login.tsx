@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
@@ -71,6 +70,10 @@ const Login = () => {
       console.log(`Attempting to login with email: ${loginEmail}`);
       await login(loginEmail, loginPassword);
       // After login, the AuthContext will handle the redirect
+      toast({
+        title: "Login successful",
+        description: "You have been logged in successfully.",
+      });
     } catch (error: any) {
       console.error("Login error:", error);
       let errorMessage = error.message || "Invalid credentials. Please try again.";

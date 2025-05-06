@@ -52,12 +52,9 @@ const BlogCard = ({
   const handleDeleteConfirm = async () => {
     setIsDeleting(true);
     try {
-      // Direct delete query without joining or referencing users table
-      const { error } = await supabase
-        .from('blogs')
-        .delete()
-        .eq('id', id);
-        
+      // Use the blogAPI from supabase utils to avoid permission issues
+      const { error } = await supabase.rpc('delete_blog', { blog_id: id });
+      
       if (error) {
         console.error('Error deleting blog post:', error);
         throw error;
