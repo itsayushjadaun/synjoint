@@ -53,8 +53,8 @@ const BlogCard = ({
   const handleDeleteConfirm = async () => {
     setIsDeleting(true);
     try {
-      // Use the RPC function with the correct type specification
-      const { error } = await supabase.rpc('delete_blog', { blog_id: id });
+      // Use the RPC function but with a type assertion to avoid TypeScript errors
+      const { error } = await supabase.rpc('delete_blog' as any, { blog_id: id });
       
       if (error) {
         console.error('Error deleting blog post:', error);
