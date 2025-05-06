@@ -48,6 +48,11 @@ const Blogs = () => {
     fetchBlogs();
   }, []);
 
+  // Handle blog deletion from the UI
+  const handleBlogDelete = (deletedBlogId: string) => {
+    setBlogs(prevBlogs => prevBlogs.filter(blog => blog.id !== deletedBlogId));
+  };
+
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
       <Navbar />
@@ -90,7 +95,7 @@ const Blogs = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
               >
-                <BlogCard {...blog} />
+                <BlogCard {...blog} onDelete={() => handleBlogDelete(blog.id)} />
               </motion.div>
             ))}
           </motion.div>

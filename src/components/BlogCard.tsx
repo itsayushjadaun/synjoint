@@ -30,6 +30,7 @@ const BlogCard = ({
   const { user, refreshBlogs } = useAuth();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleted, setIsDeleted] = useState(false);
   
   const isAdmin = user?.role === 'admin';
   
@@ -66,6 +67,10 @@ const BlogCard = ({
         description: "Blog post deleted successfully",
       });
       
+      // Mark as deleted to hide from UI immediately
+      setIsDeleted(true);
+      
+      // Call the onDelete callback if provided
       if (onDelete) {
         onDelete();
       } else {
@@ -83,6 +88,11 @@ const BlogCard = ({
       setShowDeleteDialog(false);
     }
   };
+
+  // If the blog post is deleted, don't render anything
+  if (isDeleted) {
+    return null;
+  }
 
   return (
     <>

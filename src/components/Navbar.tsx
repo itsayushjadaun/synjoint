@@ -24,6 +24,8 @@ const Navbar = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchDropdownRef = useRef<HTMLDivElement>(null);
 
   const sectionRefs = {
     about: useRef<null | HTMLAnchorElement>(null),
@@ -47,6 +49,13 @@ const Navbar = () => {
     const handleOutsideClick = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsMobileMenuOpen(false);
+      }
+      
+      // Close search suggestions when clicking outside
+      if (searchDropdownRef.current && 
+          !searchDropdownRef.current.contains(event.target as Node) && 
+          searchInputRef.current !== event.target) {
+        setShowSuggestions(false);
       }
     };
 
@@ -156,6 +165,7 @@ const Navbar = () => {
             <div className="relative hidden md:block">
               <form onSubmit={handleSearch} className="flex items-center">
                 <input
+                  ref={searchInputRef}
                   type="text"
                   placeholder="Search Here"
                   value={searchTerm}
@@ -166,11 +176,18 @@ const Navbar = () => {
                   className="py-1 px-3 pr-10 rounded-md text-gray-900 text-sm w-48 transition-all focus:w-56 focus:ring-2 focus:ring-white/20 focus:outline-none"
                   onFocus={() => setShowSuggestions(true)}
                 />
-                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4">
+                <button 
+                  type="submit" 
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-6 h-6"
+                  aria-label="Search"
+                >
                   <Search className="h-4 w-4 text-gray-500" />
-                </div>
+                </button>
                 {showSuggestions && searchTerm && (
-                  <div className="absolute left-0 z-50 mt-1 bg-white dark:bg-gray-800 rounded shadow-lg w-full border border-gray-200 dark:border-gray-700 max-h-48 overflow-auto text-sm">
+                  <div 
+                    ref={searchDropdownRef}
+                    className="absolute left-0 z-50 mt-1 bg-white dark:bg-gray-800 rounded shadow-lg w-full border border-gray-200 dark:border-gray-700 max-h-48 overflow-auto text-sm"
+                  >
                     {suggestions.length > 0 ? (
                       suggestions.map((sugg) => (
                         <div
@@ -337,11 +354,16 @@ const Navbar = () => {
                   <input
                     type="text"
                     placeholder="Search Here"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full py-2 px-3 pr-10 rounded-md text-gray-900 dark:text-gray-200 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700"
                   />
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4">
-                    <Search className="h-4 w-4 text-gray-500" />
-                  </div>
+                  <button 
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-8 h-8"
+                    aria-label="Search"
+                  >
+                    <Search className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                  </button>
                 </div>
               </div>
               
