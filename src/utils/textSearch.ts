@@ -110,6 +110,7 @@ const getTextNodes = (element: Node): Text[] => {
  * @param inputElement The search input element to enhance
  */
 export const enhanceSearchWithScroll = (inputElement: HTMLInputElement) => {
+  // Store the original event handler if it exists
   const originalHandler = inputElement.onkeyup;
   
   inputElement.onkeyup = (event) => {
@@ -117,8 +118,12 @@ export const enhanceSearchWithScroll = (inputElement: HTMLInputElement) => {
     if (originalHandler) {
       if (typeof originalHandler === 'function') {
         originalHandler.call(inputElement, event);
-      } else if (typeof originalHandler === 'object' && originalHandler.handleEvent) {
-        originalHandler.handleEvent.call(inputElement, event);
+      } else if (typeof originalHandler === 'object' && originalHandler !== null) {
+        // Check if it's an EventListener object with handleEvent
+        const eventListener = originalHandler as EventListenerObject;
+        if ('handleEvent' in eventListener) {
+          eventListener.handleEvent(event);
+        }
       }
     }
     
