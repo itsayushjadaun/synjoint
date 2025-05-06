@@ -184,6 +184,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_blog: {
+        Args: { blog_id: string }
+        Returns: undefined
+      }
       increment_count: {
         Args: { row_id: string }
         Returns: number
