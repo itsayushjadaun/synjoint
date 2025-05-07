@@ -72,7 +72,7 @@ const Navbar = () => {
     { name: "About Us", href: "/about", ref: sectionRefs.about },
     { name: "Our Stakeholders", href: "/stakeholders", ref: sectionRefs.stakeholders },
     { name: "Products", href: "/products", ref: sectionRefs.products },
-    { name: "Meril Academy", href: "/academy" },
+    // { name: "Meril Academy", href: "/academy" },
     { name: "Blogs", href: "/blogs" },
     { name: "Careers", href: "/careers" },
     { name: "Contact Us", href: "/contact", ref: sectionRefs.contact }
