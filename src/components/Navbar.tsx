@@ -69,7 +69,7 @@ const Navbar = () => {
   const languages = ["English", "Hindi", "Spanish"];
 
   const menuItems = [
-    { name: "Home", href: "/", icon: Home },
+    { name: "Home", href: "/" },
     { name: "About Us", href: "/about", ref: sectionRefs.about },
     { name: "Our Stakeholders", href: "/stakeholders", ref: sectionRefs.stakeholders },
     { name: "Products", href: "/products", ref: sectionRefs.products },
