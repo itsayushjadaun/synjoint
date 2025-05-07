@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Menu, X, Search, User, LogOut, FileText, Briefcase, ChevronDown } from "lucide-react";
+import { Menu, X, Search, User, LogOut, FileText, Briefcase, ChevronDown, Home } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "@/components/ui/button";
 import DarkModeToggle from "./DarkModeToggle";
@@ -69,16 +69,17 @@ const Navbar = () => {
   const languages = ["English", "Hindi", "Spanish"];
 
   const menuItems = [
+    { name: "Home", href: "/", icon: Home },
     { name: "About Us", href: "/about", ref: sectionRefs.about },
     { name: "Our Stakeholders", href: "/stakeholders", ref: sectionRefs.stakeholders },
     { name: "Products", href: "/products", ref: sectionRefs.products },
-    // { name: "Meril Academy", href: "/academy" },
     { name: "Blogs", href: "/blogs" },
     { name: "Careers", href: "/careers" },
     { name: "Contact Us", href: "/contact", ref: sectionRefs.contact }
   ];
 
   const suggestionKeywords = [
+    { label: "Home", keywords: ["home", "main", "landing"], target: "/" },
     { label: "Products", keywords: ["product", "products", "prod"], target: "/products" },
     { label: "About Us", keywords: ["about", "company", "who"], target: "/about" },
     { label: "Contact Us", keywords: ["contact", "get in touch"], target: "/contact" },
@@ -307,8 +308,9 @@ const Navbar = () => {
                 <Link
                   key={item.name}
                   to={item.href}
-                  className="text-gray-800 dark:text-gray-200 hover:text-synjoint-blue dark:hover:text-synjoint-lightblue transition-colors duration-200 font-medium text-sm animate-link"
+                  className="text-gray-800 dark:text-gray-200 hover:text-synjoint-blue dark:hover:text-synjoint-lightblue transition-colors duration-200 font-medium text-sm animate-link flex items-center gap-1"
                 >
+                  {item.icon && <item.icon className="h-4 w-4" />}
                   {item.name}
                 </Link>
               ))}
@@ -342,9 +344,10 @@ const Navbar = () => {
                 <Link
                   key={item.name}
                   to={item.href}
-                  className="block px-3 py-2 text-gray-800 dark:text-gray-200 hover:text-synjoint-blue hover:bg-gray-50 dark:hover:text-synjoint-lightblue dark:hover:bg-gray-700 rounded-md transition-colors duration-200 font-medium"
+                  className="flex items-center gap-2 px-3 py-2 text-gray-800 dark:text-gray-200 hover:text-synjoint-blue hover:bg-gray-50 dark:hover:text-synjoint-lightblue dark:hover:bg-gray-700 rounded-md transition-colors duration-200 font-medium"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
+                  {item.icon && <item.icon className="h-4 w-4" />}
                   {item.name}
                 </Link>
               ))}
