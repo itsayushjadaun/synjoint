@@ -9,6 +9,7 @@ const AuthCallback = () => {
   const location = useLocation();
   const [isProcessing, setIsProcessing] = useState(true);
   const [status, setStatus] = useState('Processing authentication...');
+  const [toastShown, setToastShown] = useState(false); // Track if toast has been shown
 
   useEffect(() => {
     const handleAuthCallback = async () => {
@@ -24,7 +25,10 @@ const AuthCallback = () => {
         
         if (error) {
           console.error('Auth error:', error, errorDescription);
-          toast.error(errorDescription || 'Authentication failed. Please try again.');
+          if (!toastShown) {
+            toast.error(errorDescription || 'Authentication failed. Please try again.');
+            setToastShown(true);
+          }
           navigate('/login');
           return;
         }
@@ -40,10 +44,16 @@ const AuthCallback = () => {
         } else if (type === 'signup') {
           console.log(`Email signup confirmation detected`);
           setStatus('Email confirmed! Setting up your account...');
-          toast.success('Email confirmed successfully!');
+          if (!toastShown) {
+            toast.success('Email confirmed successfully!');
+            setToastShown(true);
+          }
         } else if (type === 'recovery' || type === 'invite') {
           console.log(`Email ${type} callback detected`);
-          toast.success('Email confirmed successfully!');
+          if (!toastShown) {
+            toast.success('Email confirmed successfully!');
+            setToastShown(true);
+          }
         }
 
         // Get current session after confirmation
@@ -84,17 +94,26 @@ const AuthCallback = () => {
             }, 1500);
           } else {
             console.error("Failed to create user record after multiple attempts");
-            toast.error('Account setup failed. Please contact support.');
+            if (!toastShown) {
+              toast.error('Account setup failed. Please contact support.');
+              setToastShown(true);
+            }
             navigate('/login');
           }
         } else {
           console.log("No session found in callback");
-          toast.error('No active session found. Please try logging in again.');
+          if (!toastShown) {
+            toast.error('No active session found. Please try logging in again.');
+            setToastShown(true);
+          }
           navigate('/login');
         }
       } catch (error) {
         console.error('Auth callback error:', error);
-        toast.error('Authentication failed. Please try again.');
+        if (!toastShown) {
+          toast.error('Authentication failed. Please try again.');
+          setToastShown(true);
+        }
         navigate('/login');
       } finally {
         setIsProcessing(false);
@@ -188,17 +207,26 @@ const AuthCallback = () => {
                   return false;
                 } else {
                   console.log("Upsert user record created successfully");
-                  toast.success('Account created successfully!');
+                  if (!toastShown) {
+                    toast.success('Account created successfully!');
+                    setToastShown(true);
+                  }
                   return true;
                 }
               } else {
                 console.log("Minimal user record created successfully");
-                toast.success('Account created successfully!');
+                if (!toastShown) {
+                  toast.success('Account created successfully!');
+                  setToastShown(true);
+                }
                 return true;
               }
             } else {
               console.log("User record created successfully");
-              toast.success('Account created successfully!');
+              if (!toastShown) {
+                toast.success('Account created successfully!');
+                setToastShown(true);
+              }
               return true;
             }
           } catch (createError) {
@@ -224,7 +252,10 @@ const AuthCallback = () => {
           } else {
             console.log("User data updated successfully");
           }
-          toast.success('Successfully signed in!');
+          if (!toastShown) {
+            toast.success('Successfully signed in!');
+            setToastShown(true);
+          }
           return true;
         }
       } catch (error) {
@@ -234,7 +265,7 @@ const AuthCallback = () => {
     };
 
     handleAuthCallback();
-  }, [navigate, location]);
+  }, [navigate, location, toastShown]); // Added toastShown to dependencies
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">

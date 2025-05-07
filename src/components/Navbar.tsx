@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Menu, X, Search, User, LogOut, FileText, Briefcase, ChevronDown, Home } from "lucide-react";
@@ -34,12 +35,11 @@ const Navbar = () => {
     contact: useRef<null | HTMLAnchorElement>(null),
   };
 
-  const [logoTextColor, setLogoTextColor] = useState("#2563eb");
-
+  // Remove logoTextColor state since we're removing the text
+  
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
-      setLogoTextColor(window.scrollY > 20 ? "#fff" : "#2563eb");
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
@@ -177,6 +177,7 @@ const Navbar = () => {
                   className="py-1 px-3 pr-10 rounded-md text-gray-900 text-sm w-48 transition-all focus:w-56 focus:ring-2 focus:ring-white/20 focus:outline-none"
                   onFocus={() => setShowSuggestions(true)}
                 />
+                {/* Remove the duplicate Search icon button */}
                 <button 
                   type="submit" 
                   className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-6 h-6"
@@ -291,15 +292,7 @@ const Navbar = () => {
                   alt="Synjoint Logo"
                   className="h-12 w-auto"
                 />
-                <span
-                  className="font-bold text-xl ml-2 transition-colors duration-300 hidden sm:inline"
-                  style={{
-                    color: logoTextColor,
-                    letterSpacing: "1px"
-                  }}
-                >
-                  SYNJOINT Tech
-                </span>
+                {/* Removed the text logo span here */}
               </Link>
             </div>
             
@@ -353,21 +346,28 @@ const Navbar = () => {
               ))}
               
               <div className="p-3">
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Search Here"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full py-2 px-3 pr-10 rounded-md text-gray-900 dark:text-gray-200 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700"
-                  />
+                <form onSubmit={handleSearch} className="flex items-center space-x-2">
+                  <div className="relative flex-grow">
+                    <input
+                      type="text"
+                      placeholder="Search Here"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full py-2 px-3 pr-10 rounded-md text-gray-900 dark:text-gray-200 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700"
+                    />
+                    {/* Search icon inside the input */}
+                    <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                      <Search className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                    </div>
+                  </div>
+                  {/* Separate Find button */}
                   <button 
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-8 h-8"
-                    aria-label="Search"
+                    type="submit"
+                    className="bg-blue-500 text-white px-4 py-2 rounded-md text-sm"
                   >
-                    <Search className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                    Find
                   </button>
-                </div>
+                </form>
               </div>
               
               <div className="p-3 border-t border-gray-200 dark:border-gray-700">
