@@ -6,7 +6,7 @@ const ProductShowcase = () => {
     {
       title: "Hip Joint / Arthroplasty",
       description: "Comprehensive range of cemented and uncemented hip replacement solutions designed for optimal patient outcomes.",
-      image: "/lovable-uploads/052adda9-1a2d-4219-827c-f98040ff2479.png",
+      image: "/lovable-uploads/image (10).jpg",
       features: [
         "Primary Femoral Hip Stems",
         "Bipolar Hip Systems",
@@ -17,7 +17,7 @@ const ProductShowcase = () => {
     {
       title: "Knee Joint / Arthroplasty",
       description: "Innovative knee replacement systems with precision engineering for better mobility and longevity.",
-      image: "/lovable-uploads/46c0db01-9871-4090-8b45-14399a236f90.png",
+      image: "/lovable-uploads/image (11).jpg",
       features: [
         "Total Knee Replacement Systems",
         "Revision Knee Systems",
