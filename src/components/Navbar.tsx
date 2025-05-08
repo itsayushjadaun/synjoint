@@ -280,7 +280,7 @@ const Navbar = () => {
             <div className="flex-shrink-0">
               <Link to="/" className="flex items-center">
                 <img
-                  src="/lovable-uploads/fa6d2119-286c-498d-b934-ec9619932a0c.png"
+                  src="/lovable-uploads/WhatsApp Image 2025-02-15 at 10.46.55 PM-Photoroom.png"
                   alt="Synjoint Logo"
                   className="h-12 w-auto"
                 />
