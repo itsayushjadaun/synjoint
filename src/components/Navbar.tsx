@@ -66,6 +66,7 @@ const Navbar = () => {
 
   const languages = ["English", "Hindi", "Spanish"];
 
+  // Updated menuItems type to not include icon property, since it's not being used
   const menuItems = [
     { name: "Home", href: "/" },
     { name: "About Us", href: "/about", ref: sectionRefs.about },
@@ -299,7 +300,6 @@ const Navbar = () => {
                   to={item.href}
                   className="text-gray-800 dark:text-gray-200 hover:text-synjoint-blue dark:hover:text-synjoint-lightblue transition-colors duration-200 font-medium text-sm animate-link flex items-center gap-1"
                 >
-                  {item.icon && <item.icon className="h-4 w-4" />}
                   {item.name}
                 </Link>
               ))}
@@ -336,7 +336,6 @@ const Navbar = () => {
                   className="flex items-center gap-2 px-3 py-2 text-gray-800 dark:text-gray-200 hover:text-synjoint-blue hover:bg-gray-50 dark:hover:text-synjoint-lightblue dark:hover:bg-gray-700 rounded-md transition-colors duration-200 font-medium"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  {item.icon && <item.icon className="h-4 w-4" />}
                   {item.name}
                 </Link>
               ))}
@@ -448,3 +447,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
