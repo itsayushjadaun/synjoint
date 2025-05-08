@@ -176,13 +176,7 @@ const Navbar = () => {
                   className="py-1 px-3 pr-10 rounded-md text-gray-900 text-sm w-48 transition-all focus:w-56 focus:ring-2 focus:ring-white/20 focus:outline-none"
                   onFocus={() => setShowSuggestions(true)}
                 />
-                <button 
-                  type="submit" 
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-6 h-6"
-                  aria-label="Search"
-                >
-                  <Search className="h-4 w-4 text-gray-500" />
-                </button>
+           
                 {showSuggestions && searchTerm && (
                   <div 
                     ref={searchDropdownRef}
