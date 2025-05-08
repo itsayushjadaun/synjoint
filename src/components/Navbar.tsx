@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Menu, X, Search, User, LogOut, FileText, Briefcase, ChevronDown, Home } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import DarkModeToggle from "./DarkModeToggle";
 import {
   DropdownMenu,
@@ -22,6 +23,7 @@ const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  // Search state
   const [searchTerm, setSearchTerm] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -164,29 +166,35 @@ const Navbar = () => {
             </div>
             <div className="relative hidden md:block">
               <form onSubmit={handleSearch} className="flex items-center">
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  placeholder="Search Here"
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setShowSuggestions(true);
-                  }}
-                  className="py-1 px-3 pr-10 rounded-md text-gray-900 text-sm w-48 transition-all focus:w-56 focus:ring-2 focus:ring-white/20 focus:outline-none"
-                  onFocus={() => setShowSuggestions(true)}
-                />
-                <button 
+                <div className="relative w-48 transition-all focus-within:w-56">
+                  <Input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder="Search Here"
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setShowSuggestions(true);
+                    }}
+                    className="pr-10 text-sm text-gray-900 bg-white dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-white/20 focus:outline-none"
+                    onFocus={() => setShowSuggestions(true)}
+                  />
+                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-6 h-6 pointer-events-none">
+                    <Search className="h-4 w-4 text-gray-500" />
+                  </div>
+                </div>
+                <Button 
                   type="submit" 
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center justify-center w-6 h-6"
-                  aria-label="Search"
+                  variant="ghost" 
+                  size="sm"
+                  className="ml-2 text-white bg-synjoint-blue/80 hover:bg-synjoint-blue"
                 >
-                  <Search className="h-4 w-4 text-gray-500" />
-                </button>
+                  Find
+                </Button>
                 {showSuggestions && searchTerm && (
                   <div 
                     ref={searchDropdownRef}
-                    className="absolute left-0 z-50 mt-1 bg-white dark:bg-gray-800 rounded shadow-lg w-full border border-gray-200 dark:border-gray-700 max-h-48 overflow-auto text-sm"
+                    className="absolute left-0 top-full z-50 mt-1 bg-white dark:bg-gray-800 rounded shadow-lg w-full border border-gray-200 dark:border-gray-700 max-h-48 overflow-auto text-sm"
                   >
                     {suggestions.length > 0 ? (
                       suggestions.map((sugg) => (
@@ -343,23 +351,24 @@ const Navbar = () => {
               <div className="p-3">
                 <form onSubmit={handleSearch} className="flex items-center">
                   <div className="relative flex-grow">
-                    <input
+                    <Input
                       type="text"
                       placeholder="Search Here"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-full py-2 px-3 pr-10 rounded-md text-gray-900 dark:text-gray-200 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700"
                     />
-                    <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                    <div className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
                       <Search className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                     </div>
                   </div>
-                  <button 
+                  <Button 
                     type="submit"
-                    className="bg-blue-500 text-white px-4 py-2 rounded-md text-sm ml-2"
+                    className="ml-2 bg-synjoint-blue hover:bg-synjoint-darkblue text-white"
+                    size="sm"
                   >
                     Find
-                  </button>
+                  </Button>
                 </form>
               </div>
               
@@ -447,4 +456,3 @@ const Navbar = () => {
 };
 
 export default Navbar;
-
