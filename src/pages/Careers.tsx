@@ -6,10 +6,11 @@ import { useAuth } from "../context/AuthContext";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const Careers = () => {
-  const { careers, user, refreshCareers } = useAuth();
+  const { careers: allCareers, user, refreshCareers } = useAuth();
+  const [careers, setCareers] = useState(allCareers);
   const isAdmin = user?.role === 'admin';
   
   useEffect(() => {
@@ -17,6 +18,14 @@ const Careers = () => {
     refreshCareers();
     // Empty dependency array ensures this only runs once on mount
   }, []);
+  
+  useEffect(() => {
+    setCareers(allCareers);
+  }, [allCareers]);
+
+  const handleCareerDelete = (id: string) => {
+    setCareers(prev => prev.filter(career => career.id !== id));
+  };
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
@@ -66,7 +75,7 @@ const Careers = () => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5, delay: 0.3 }}
                     >
-                      <CareerCard {...career} />
+                      <CareerCard {...career} onDelete={handleCareerDelete} />
                     </motion.div>
                   ))}
                 </div>

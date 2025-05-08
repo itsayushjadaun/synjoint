@@ -4,12 +4,14 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MapPin, Calendar } from "lucide-react";
+import { MapPin, Calendar, Trash2 } from "lucide-react";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/use-toast";
 import ApplyResumeUpload from "./ApplyResumeUpload";
 import ApplyFileUpload from "./ApplyFileUpload";
 import { supabase } from "@/utils/supabase";
+import DeleteConfirmationDialog from "./DeleteConfirmationDialog";
+import { useAuth } from "../context/AuthContext";
 
 interface CareerCardProps {
   id: string;
@@ -18,9 +20,10 @@ interface CareerCardProps {
   requirements: string[];
   location: string;
   created_at: string;
+  onDelete?: (id: string) => void;
 }
 
-const CareerCard = ({ id, title, description, requirements, location, created_at }: CareerCardProps) => {
+const CareerCard = ({ id, title, description, requirements, location, created_at, onDelete }: CareerCardProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -31,6 +34,10 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -40,6 +47,40 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
   const handleFileChange = (file: File) => {
     console.log("Resume file received:", file.name);
     setResumeFile(file);
+  };
+
+  const handleDelete = async () => {
+    if (!id) return;
+    
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase
+        .from('careers')
+        .delete()
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      toast({
+        title: "Career post deleted",
+        description: "The career post has been successfully deleted."
+      });
+      
+      if (onDelete) {
+        onDelete(id);
+      }
+      
+    } catch (error) {
+      console.error('Error deleting career post:', error);
+      toast({
+        title: "Delete failed",
+        description: "Failed to delete the career post. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteDialogOpen(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -147,8 +188,19 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
 
   return (
     <Card className="h-full flex flex-col dark:bg-gray-800 dark:border-gray-700">
-      <CardHeader>
+      <CardHeader className="flex flex-row justify-between items-start">
         <CardTitle className="text-xl text-synjoint-blue dark:text-blue-400">{title}</CardTitle>
+        {isAdmin && (
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => setIsDeleteDialogOpen(true)}
+            className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20"
+          >
+            <Trash2 className="h-4 w-4" />
+            <span className="sr-only">Delete</span>
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="flex-grow">
         <p className="text-gray-600 mb-4 dark:text-gray-300">
@@ -293,6 +345,15 @@ const CareerCard = ({ id, title, description, requirements, location, created_at
           </DialogContent>
         </Dialog>
       </CardFooter>
+      
+      <DeleteConfirmationDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleDelete}
+        title="Delete Career Post"
+        description="Are you sure you want to delete this career post? This action cannot be undone."
+        isDeleting={isDeleting}
+      />
     </Card>
   );
 };
