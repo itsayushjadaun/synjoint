@@ -53,22 +53,20 @@ const SearchBar = ({
       onSubmit={handleSubmit} 
       className={`flex items-center relative ${className}`}
     >
-      <div className={`relative ${isMobile ? "w-full" : "w-48 focus-within:w-56"} transition-all duration-200`}>
+      <div className={`relative ${isMobile ? "w-full" : "w-32"} flex-shrink-0`}>
         <Input
           ref={searchInputRef}
           type="text"
-          placeholder="Search Here"
+          placeholder="Search"
           value={searchTerm}
           onChange={(e) => {
             setSearchTerm(e.target.value);
             setShowSuggestions(true);
           }}
-          className={`pl-3 pr-10 py-2 text-sm text-gray-900 bg-white dark:bg-gray-700 dark:text-white focus:outline-none border-gray-300 dark:border-gray-600 ${
-            isMobile ? "w-full" : ""
-          }`}
+          className={`pl-8 pr-2 py-1 h-8 text-sm text-gray-900 bg-white dark:bg-gray-700 dark:text-white focus:outline-none border-gray-300 dark:border-gray-600 rounded-r-none`}
           onFocus={() => setShowSuggestions(true)}
         />
-        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+        <div className="absolute left-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
           <Search className="h-4 w-4 text-gray-500 dark:text-gray-400" />
         </div>
       </div>
@@ -76,9 +74,7 @@ const SearchBar = ({
         type="submit"
         variant="ghost"
         size="sm"
-        className={`ml-2 text-white bg-synjoint-blue/80 hover:bg-synjoint-blue ${
-          isMobile ? "" : "min-w-[50px]"
-        }`}
+        className={`h-8 rounded-l-none text-white bg-synjoint-blue/80 hover:bg-synjoint-blue`}
       >
         Find
       </Button>
