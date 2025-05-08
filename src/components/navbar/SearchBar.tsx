@@ -48,7 +48,7 @@ const SearchBar = ({
 
   return (
     <div className={`relative ${className}`}>
-      <form onSubmit={handleSubmit} className="flex items-center">
+       <form onSubmit={handleSubmit} className="flex items-center gap-2">
         <div className="relative">
           <Input
             ref={searchInputRef}
@@ -70,7 +70,7 @@ const SearchBar = ({
         <Button
           type="submit"
           size="icon"
-          className="ml-1 h-8 w-8 bg-synjoint-blue hover:bg-synjoint-darkblue text-white p-0"
+           className="ml-1 h-8 w-8 bg-synjoint-blue hover:bg-synjoint-darkblue text-white p-0 flex-shrink-0"
         >
           <Search className="h-4 w-4" />
         </Button>
