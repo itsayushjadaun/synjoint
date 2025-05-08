@@ -33,7 +33,7 @@ const Hero = () => {
         ))}
       </div>
       
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-0 -mt-20">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           {/* Left Column - Text Content */}
           <motion.div
@@ -87,7 +87,7 @@ const Hero = () => {
             className="relative rounded-2xl overflow-hidden shadow-2xl border border-white/10"
           >
             <img
-              src="/lovable-uploads/274c7dca-7bb5-45ca-84ae-807b8a8c3f00.png"
+              src="/lovable-uploads/image (8).jpg"
               alt="Orthopedic Implants"
               className="w-full rounded-2xl"
             />
@@ -101,23 +101,24 @@ const Hero = () => {
 
         {/* Scroll Down Indicator */}
         <motion.a
-          href="#about"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ 
-            duration: 0.7, 
-            delay: 0.8,
-            y: {
-              repeat: Infinity,
-              repeatType: "reverse",
-              duration: 1.5
-            }
-          }}
-          className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex flex-col items-center text-white/80 hover:text-white transition-colors"
-        >
-          <span className="text-sm mb-2">Scroll Down</span>
-          <ArrowDown className="h-5 w-5" />
-        </motion.a>
+  href="#about"
+  initial={{ opacity: 0, y: 10 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{
+    duration: 0.7,
+    delay: 0.8,
+    y: {
+      repeat: Infinity,
+      repeatType: "reverse",
+      duration: 1.5
+    }
+  }}
+  className="absolute bottom-0.01 left-[50%] transform -translate-x-1/2 flex flex-col items-center text-white/80 hover:text-white transition-colors"
+>
+  <span className="text-sm mb-2">Scroll Down</span>
+  <ArrowDown className="h-5 w-5" />
+</motion.a>
+
       </div>
     </div>
   );

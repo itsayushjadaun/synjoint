@@ -38,7 +38,7 @@ const ProductDetail = () => {
           "MRI-compatible options available",
           "Comprehensive size range to fit diverse patient anatomy"
         ],
-        image: "/lovable-uploads/625c5313-cd17-4b6b-869e-3361c4f96290.png",
+        image: "/lovable-uploads/image (2).jpg",
         specifications: {
           "Material": "Medical-grade titanium alloy",
           "Sterilization": "Gamma radiation",
@@ -59,7 +59,7 @@ const ProductDetail = () => {
           "Compatible with standard sterilization protocols",
           "Designed with input from leading surgeons"
         ],
-        image: "/lovable-uploads/46c0db01-9871-4090-8b45-14399a236f90.png",
+        image: "/lovable-uploads/image (4).jpg",
         specifications: {
           "Material": "Surgical-grade stainless steel",
           "Finish": "Satin non-reflective",
@@ -80,7 +80,7 @@ const ProductDetail = () => {
           "Energy-efficient operation",
           "Compact design for space-constrained environments"
         ],
-        image: "/lovable-uploads/79996f38-038d-410e-90eb-de4ca9e224a9.png",
+        image: "/lovable-uploads/image (5).jpg",
         specifications: {
           "Power": "Rechargeable lithium-ion battery",
           "Battery Life": "12 hours continuous operation",
@@ -101,7 +101,7 @@ const ProductDetail = () => {
           "Patient data management and integration",
           "Remote monitoring capabilities"
         ],
-        image: "/lovable-uploads/67a5affa-62f9-4f9b-96c4-2f2b01963a4e.png",
+        image: "/lovable-uploads/image (7).jpg",
         specifications: {
           "Accuracy": "±0.1% across operating range",
           "Processing Speed": "Results in under 60 seconds",
