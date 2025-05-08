@@ -188,7 +188,7 @@ const Navbar = () => {
 
   return (
     <div className="sticky top-0 z-50 w-full shadow-sm">
-      <div className="bg-synjoint-blue text-white py-1 dark:bg-gray-900">
+      <div className="bg-synjoint-blue text-white py-0.5 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <div className="hidden md:flex space-x-4 text-sm">
             <span className="flex items-center">
@@ -349,8 +349,8 @@ const Navbar = () => {
             : "bg-white dark:bg-gray-800"
         }`}
       >
-        <div className="max-w-7xl mx-auto py-0.1 px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
+        <div className="max-w-7xl mx-auto  px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-12">
             <div className="flex-shrink-0">
               <Link to="/" className="flex items-center space-x-2">
                 <img
