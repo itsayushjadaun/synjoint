@@ -49,35 +49,39 @@ const SearchBar = ({
   };
 
   return (
-    <form 
-      onSubmit={handleSubmit} 
-      className={`flex items-center relative ${className}`}
-    >
-      <div className={`relative ${isMobile ? "w-full" : "w-32"} flex-shrink-0`}>
-        <Input
-          ref={searchInputRef}
-          type="text"
-          placeholder="Search"
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-            setShowSuggestions(true);
-          }}
-          className={`pl-8 pr-2 py-1 h-8 text-sm text-gray-900 bg-white dark:bg-gray-700 dark:text-white focus:outline-none border-gray-300 dark:border-gray-600 rounded-r-none`}
-          onFocus={() => setShowSuggestions(true)}
-        />
-        <div className="absolute left-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
-          <Search className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-        </div>
-      </div>
-      <Button
-        type="submit"
-        variant="ghost"
-        size="sm"
-        className={`h-8 rounded-l-none text-white bg-synjoint-blue/80 hover:bg-synjoint-blue`}
+    <div className={`relative ${className}`}>
+      <form 
+        onSubmit={handleSubmit} 
+        className="flex items-center"
       >
-        Find
-      </Button>
+        <div className="relative">
+          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+            <Search className="h-4 w-4 text-gray-400" />
+          </div>
+          
+          <Input
+            ref={searchInputRef}
+            type="text"
+            placeholder="Search"
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setShowSuggestions(true);
+            }}
+            className={`pl-10 pr-3 py-2 h-10 ${isMobile ? "w-full" : "w-64"} text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-1 focus:ring-synjoint-blue focus:border-synjoint-blue`}
+            onFocus={() => setShowSuggestions(true)}
+          />
+        </div>
+        
+        <Button
+          type="submit"
+          variant="default"
+          size="default"
+          className="ml-2 text-white bg-synjoint-blue hover:bg-synjoint-darkblue"
+        >
+          Find
+        </Button>
+      </form>
       
       {showSuggestions && searchTerm && (
         <div
@@ -101,7 +105,7 @@ const SearchBar = ({
           )}
         </div>
       )}
-    </form>
+    </div>
   );
 };
 
