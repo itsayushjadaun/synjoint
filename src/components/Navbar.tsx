@@ -1,7 +1,16 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Menu, X, Search, User, LogOut, FileText, Briefcase, ChevronDown, Home } from "lucide-react";
+import {
+  Menu,
+  X,
+  Search,
+  User,
+  LogOut,
+  FileText,
+  Briefcase,
+  ChevronDown,
+  Home,
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "@/components/ui/button";
 import DarkModeToggle from "./DarkModeToggle";
@@ -34,7 +43,7 @@ const Navbar = () => {
     stakeholders: useRef<null | HTMLAnchorElement>(null),
     contact: useRef<null | HTMLAnchorElement>(null),
   };
-  
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -45,20 +54,25 @@ const Navbar = () => {
 
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsMobileMenuOpen(false);
       }
-      
+
       // Close search suggestions when clicking outside
-      if (searchDropdownRef.current && 
-          !searchDropdownRef.current.contains(event.target as Node) && 
-          searchInputRef.current !== event.target) {
+      if (
+        searchDropdownRef.current &&
+        !searchDropdownRef.current.contains(event.target as Node) &&
+        searchInputRef.current !== event.target
+      ) {
         setShowSuggestions(false);
       }
     };
 
     document.addEventListener("mousedown", handleOutsideClick);
-    
+
     return () => {
       document.removeEventListener("mousedown", handleOutsideClick);
     };
@@ -70,21 +84,45 @@ const Navbar = () => {
   const menuItems = [
     { name: "Home", href: "/" },
     { name: "About Us", href: "/about", ref: sectionRefs.about },
-    { name: "Our Stakeholders", href: "/stakeholders", ref: sectionRefs.stakeholders },
+    {
+      name: "Our Stakeholders",
+      href: "/stakeholders",
+      ref: sectionRefs.stakeholders,
+    },
     { name: "Products", href: "/products", ref: sectionRefs.products },
     { name: "Blogs", href: "/blogs" },
     { name: "Careers", href: "/careers" },
-    { name: "Contact Us", href: "/contact", ref: sectionRefs.contact }
+    { name: "Contact Us", href: "/contact", ref: sectionRefs.contact },
   ];
 
   const suggestionKeywords = [
     { label: "Home", keywords: ["home", "main", "landing"], target: "/" },
-    { label: "Products", keywords: ["product", "products", "prod"], target: "/products" },
-    { label: "About Us", keywords: ["about", "company", "who"], target: "/about" },
-    { label: "Contact Us", keywords: ["contact", "get in touch"], target: "/contact" },
-    { label: "Careers", keywords: ["career", "careers", "job", "jobs", "apply"], target: "/careers" },
+    {
+      label: "Products",
+      keywords: ["product", "products", "prod"],
+      target: "/products",
+    },
+    {
+      label: "About Us",
+      keywords: ["about", "company", "who"],
+      target: "/about",
+    },
+    {
+      label: "Contact Us",
+      keywords: ["contact", "get in touch"],
+      target: "/contact",
+    },
+    {
+      label: "Careers",
+      keywords: ["career", "careers", "job", "jobs", "apply"],
+      target: "/careers",
+    },
     { label: "Blogs", keywords: ["blog", "blogs", "news"], target: "/blogs" },
-    { label: "Susheel (Leadership)", keywords: ["susheel", "dr. susheel"], target: "/stakeholders#susheel" }
+    {
+      label: "Susheel (Leadership)",
+      keywords: ["susheel", "dr. susheel"],
+      target: "/stakeholders#susheel",
+    },
   ];
 
   useEffect(() => {
@@ -93,10 +131,10 @@ const Navbar = () => {
       return;
     }
     const val = searchTerm.toLowerCase();
-    const relevant = suggestionKeywords.filter(s =>
-      s.keywords.some(kw => val.includes(kw))
+    const relevant = suggestionKeywords.filter((s) =>
+      s.keywords.some((kw) => val.includes(kw))
     );
-    setSuggestions(relevant.map(s => s.label));
+    setSuggestions(relevant.map((s) => s.label));
   }, [searchTerm]);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -104,14 +142,19 @@ const Navbar = () => {
     const val = searchTerm.trim().toLowerCase();
     if (!val) return;
 
-    const first = suggestionKeywords.find(s =>
-      s.keywords.some(kw => val.includes(kw))
+    const first = suggestionKeywords.find((s) =>
+      s.keywords.some((kw) => val.includes(kw))
     );
     if (first) {
       if (first.target.startsWith("/")) {
         window.location.href = first.target;
-      } else if (first.target.startsWith("#") && sectionRefs[first.target.substring(1)]) {
-        sectionRefs[first.target.substring(1)]?.current?.scrollIntoView({ behavior: "smooth" });
+      } else if (
+        first.target.startsWith("#") &&
+        sectionRefs[first.target.substring(1)]
+      ) {
+        sectionRefs[first.target.substring(1)]?.current?.scrollIntoView({
+          behavior: "smooth",
+        });
       } else {
         window.location.href = "/";
       }
@@ -124,12 +167,17 @@ const Navbar = () => {
   };
 
   const handleSuggestionClick = (label: string) => {
-    const found = suggestionKeywords.find(item => item.label === label);
+    const found = suggestionKeywords.find((item) => item.label === label);
     if (found) {
       if (found.target.startsWith("/")) {
         window.location.href = found.target;
-      } else if (found.target.startsWith("#") && sectionRefs[found.target.substring(1)]) {
-        sectionRefs[found.target.substring(1)]?.current?.scrollIntoView({ behavior: "smooth" });
+      } else if (
+        found.target.startsWith("#") &&
+        sectionRefs[found.target.substring(1)]
+      ) {
+        sectionRefs[found.target.substring(1)]?.current?.scrollIntoView({
+          behavior: "smooth",
+        });
       } else {
         window.location.href = "/";
       }
@@ -140,16 +188,21 @@ const Navbar = () => {
 
   return (
     <div className="sticky top-0 z-50 w-full shadow-sm">
-      <div className="bg-synjoint-blue text-white py-2 dark:bg-gray-900">
+      <div className="bg-synjoint-blue text-white py-1 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <div className="hidden md:flex space-x-4 text-sm">
-            <span className="flex items-center"><FileText size={14} className="mr-1" /> G-60 Ajmer Industrial Area, Ajmer</span>
-            <span className="flex items-center"><User size={14} className="mr-1" /> synjoint.tech@gmail.com</span>
+            <span className="flex items-center">
+              <FileText size={14} className="mr-1" /> G-60 Ajmer Industrial
+              Area, Ajmer
+            </span>
+            <span className="flex items-center">
+              <User size={14} className="mr-1" /> synjoint.tech@gmail.com
+            </span>
           </div>
-          
+
           <div className="flex items-center space-x-4 ml-auto">
             <DarkModeToggle />
-            <div className="relative hidden md:block">
+            <div className="relative hidden md:block w-full max-w-xs">
               <select
                 value={selectedLanguage}
                 onChange={(e) => setSelectedLanguage(e.target.value)}
@@ -162,7 +215,7 @@ const Navbar = () => {
                 ))}
               </select>
             </div>
-            <div className="relative hidden md:block">
+            <div className="relative hidden md:block w-full max-w-xs">
               <form onSubmit={handleSearch} className="flex items-center">
                 <input
                   ref={searchInputRef}
@@ -173,52 +226,65 @@ const Navbar = () => {
                     setSearchTerm(e.target.value);
                     setShowSuggestions(true);
                   }}
-                  className="py-1 px-3 pr-10 rounded-md text-gray-900 text-sm w-48 transition-all focus:w-56 focus:ring-2 focus:ring-white/20 focus:outline-none"
+                  className="py-1 px-3 pr-10 rounded-md text-gray-900 dark:text-white bg-white dark:bg-gray-700 text-sm w-full transition-all focus:w-56 focus:ring-2 focus:ring-white/20 focus:outline-none"
                   onFocus={() => setShowSuggestions(true)}
                 />
-           
+
                 {showSuggestions && searchTerm && (
-                  <div 
+                  <div
                     ref={searchDropdownRef}
-                    className="absolute left-0 z-50 mt-1 bg-white dark:bg-gray-800 rounded shadow-lg w-full border border-gray-200 dark:border-gray-700 max-h-48 overflow-auto text-sm"
+                    className="absolute left-0 top-full z-50 mt-1 bg-white dark:bg-gray-800 rounded shadow-lg w-full border border-gray-200 dark:border-gray-700 max-h-48 overflow-auto text-sm"
                   >
                     {suggestions.length > 0 ? (
                       suggestions.map((sugg) => (
                         <div
                           key={sugg}
-                          className="px-4 py-2 cursor-pointer hover:bg-synjoint-blue hover:text-white"
+                          className="px-4 py-2 text-gray-400 cursor-pointer hover:bg-synjoint-blue hover:text-white"
                           onClick={() => handleSuggestionClick(sugg)}
                         >
                           {sugg}
                         </div>
                       ))
                     ) : (
-                      <div className="px-4 py-2 text-gray-400">No result found</div>
+                      <div className="px-4 py-2 text-gray-400">
+                        Press Enter
+                      </div>
                     )}
                   </div>
                 )}
               </form>
             </div>
-            
+
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="text-white hover:text-white hover:bg-white/20 rounded-full">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-white hover:text-white hover:bg-white/20 rounded-full"
+                  >
                     <User className="h-4 w-4 mr-1" />
-                    {user?.name?.split(' ')[0]}
+                    {user?.name?.split(" ")[0]}
                     <ChevronDown className="h-3 w-3 ml-1" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="bg-white shadow-lg border border-gray-200 rounded-md dark:bg-gray-800 dark:border-gray-700 mt-1">
-                  <DropdownMenuLabel className="font-medium">{user?.name}</DropdownMenuLabel>
-                  <DropdownMenuLabel className="text-xs text-gray-500 dark:text-gray-400 -mt-3">{user?.email}</DropdownMenuLabel>
-                  <DropdownMenuLabel className="text-xs font-semibold bg-gray-100 rounded px-2 py-1 dark:bg-gray-700 inline-block mt-1">
-                    {user?.role === 'admin' ? 'Admin' : 'User'}
+                <DropdownMenuContent
+                  align="end"
+                  className="bg-white shadow-lg border border-gray-200 rounded-md dark:bg-gray-800 dark:border-gray-700 mt-1"
+                >
+                  <DropdownMenuLabel className="font-medium">
+                    {user?.name}
                   </DropdownMenuLabel>
-                  
+                  <DropdownMenuLabel className="text-xs text-gray-500 dark:text-gray-400 -mt-3">
+                    {user?.email}
+                  </DropdownMenuLabel>
+                  <DropdownMenuLabel className="text-xs font-semibold bg-gray-100 rounded px-2 py-1 dark:bg-gray-700 inline-block mt-1">
+                    {user?.role === "admin" ? "Admin" : "User"}
+                  </DropdownMenuLabel>
+
                   <DropdownMenuSeparator />
-                  
-                  {user?.role === 'admin' && (
+
+                  {user?.role === "admin" && (
                     <>
                       <DropdownMenuItem className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors">
                         <Link to="/admin" className="flex items-center w-full">
@@ -227,13 +293,19 @@ const Navbar = () => {
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors">
-                        <Link to="/admin/create-blog" className="flex items-center w-full">
+                        <Link
+                          to="/admin/create-blog"
+                          className="flex items-center w-full"
+                        >
                           <FileText className="h-4 w-4 mr-2" />
                           Create Blog Post
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors">
-                        <Link to="/admin/create-career" className="flex items-center w-full">
+                        <Link
+                          to="/admin/create-career"
+                          className="flex items-center w-full"
+                        >
                           <Briefcase className="h-4 w-4 mr-2" />
                           Create Career Post
                         </Link>
@@ -241,9 +313,9 @@ const Navbar = () => {
                       <DropdownMenuSeparator />
                     </>
                   )}
-                  
-                  <DropdownMenuItem 
-                    className="cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors text-red-600 dark:text-red-400" 
+
+                  <DropdownMenuItem
+                    className="cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors text-red-600 dark:text-red-400"
                     onClick={logout}
                   >
                     <LogOut className="h-4 w-4 mr-2" />
@@ -253,9 +325,9 @@ const Navbar = () => {
               </DropdownMenu>
             ) : (
               <Link to="/login">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="text-white hover:text-white hover:bg-white/20 rounded-full transition-all duration-300"
                 >
                   <User className="h-4 w-4 mr-1" />
@@ -272,21 +344,26 @@ const Navbar = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
         className={`w-full transition-all duration-300 ${
-          isScrolled ? "bg-white shadow-md dark:bg-gray-800 dark:shadow-gray-900/30" : "bg-white dark:bg-gray-800"
+          isScrolled
+            ? "bg-white shadow-md dark:bg-gray-800 dark:shadow-gray-900/30"
+            : "bg-white dark:bg-gray-800"
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto py-0.1 px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             <div className="flex-shrink-0">
-              <Link to="/" className="flex items-center">
+              <Link to="/" className="flex items-center space-x-2">
                 <img
                   src="/lovable-uploads/WhatsApp Image 2025-02-15 at 10.46.55 PM-Photoroom.png"
                   alt="Synjoint Logo"
                   className="h-12 w-auto"
                 />
+                <span className="text-xl font-semibold text-gray-800">
+                  SYNJOINT
+                </span>
               </Link>
             </div>
-            
+
             <div className="hidden md:flex md:items-center md:space-x-6">
               {menuItems.map((item) => (
                 <Link
@@ -312,11 +389,11 @@ const Navbar = () => {
         </div>
 
         {isMobileMenuOpen && (
-          <div 
+          <div
             ref={dropdownRef}
             className="md:hidden bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 absolute w-full shadow-lg z-50"
           >
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
@@ -333,7 +410,7 @@ const Navbar = () => {
                   {item.name}
                 </Link>
               ))}
-              
+
               <div className="p-3">
                 <form onSubmit={handleSearch} className="flex items-center">
                   <div className="relative flex-grow">
@@ -348,7 +425,7 @@ const Navbar = () => {
                       <Search className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                     </div>
                   </div>
-                  <button 
+                  <button
                     type="submit"
                     className="bg-blue-500 text-white px-4 py-2 rounded-md text-sm ml-2"
                   >
@@ -356,9 +433,11 @@ const Navbar = () => {
                   </button>
                 </form>
               </div>
-              
+
               <div className="p-3 border-t border-gray-200 dark:border-gray-700">
-                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">Language</label>
+                <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
+                  Language
+                </label>
                 <select
                   value={selectedLanguage}
                   onChange={(e) => setSelectedLanguage(e.target.value)}
@@ -371,7 +450,7 @@ const Navbar = () => {
                   ))}
                 </select>
               </div>
-              
+
               <div className="p-3 border-t border-gray-200 dark:border-gray-700">
                 {!isAuthenticated ? (
                   <Link
@@ -389,11 +468,13 @@ const Navbar = () => {
                       </div>
                       <div>
                         <div className="font-medium text-sm">{user?.name}</div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {user?.email}
+                        </div>
                       </div>
                     </div>
-                    
-                    {user?.role === 'admin' && (
+
+                    {user?.role === "admin" && (
                       <>
                         <Link
                           to="/admin"
@@ -418,7 +499,7 @@ const Navbar = () => {
                         </Link>
                       </>
                     )}
-                    
+
                     <button
                       onClick={() => {
                         logout();
@@ -441,4 +522,3 @@ const Navbar = () => {
 };
 
 export default Navbar;
-
