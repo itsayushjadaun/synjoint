@@ -122,7 +122,11 @@ const Hero = () => {
               duration: 1.5,
             },
           }}
+<<<<<<< HEAD
           className="absolute bottom-0.01 left-[50%] transform -translate-x-1/2 flex flex-col items-center text-white/80 hover:text-white transition-colors"
+=======
+          className="absolute bottom-12 left-1/2 transform -translate-x-1/2 flex flex-col items-center text-white/80 hover:text-white transition-colors"
+>>>>>>> 09deb09fdaa2afc7a26200c9845f1b0fd366daa6
         >
           <span className="text-sm mb-2">Scroll Down</span>
           <ArrowDown className="h-5 w-5" />
