@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -27,7 +26,6 @@ const SearchBar = ({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Handle outside clicks for suggestions dropdown
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
       if (
@@ -38,7 +36,7 @@ const SearchBar = ({
         setShowSuggestions(false);
       }
     };
-    
+
     document.addEventListener("mousedown", handleOutsideClick);
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, [setShowSuggestions]);
@@ -50,15 +48,8 @@ const SearchBar = ({
 
   return (
     <div className={`relative ${className}`}>
-      <form 
-        onSubmit={handleSubmit} 
-        className="flex items-center"
-      >
+      <form onSubmit={handleSubmit} className="flex items-center">
         <div className="relative">
-          <div className="absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-            <Search className="h-4 w-4 text-gray-400" />
-          </div>
-          
           <Input
             ref={searchInputRef}
             type="text"
@@ -68,21 +59,23 @@ const SearchBar = ({
               setSearchTerm(e.target.value);
               setShowSuggestions(true);
             }}
-            className={`pl-10 pr-3 py-2 h-10 ${isMobile ? "w-full" : "w-64"} text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-1 focus:ring-synjoint-blue focus:border-synjoint-blue`}
             onFocus={() => setShowSuggestions(true)}
+            className={`pl-8 pr-2 py-1 h-8 ${isMobile ? "w-full" : "w-48"} text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-1 focus:ring-synjoint-blue focus:border-synjoint-blue`}
           />
+          <div className="absolute left-2 top-1/2 transform -translate-y-1/2 pointer-events-none">
+            <Search className="h-3.5 w-3.5 text-gray-400" />
+          </div>
         </div>
-        
+
         <Button
           type="submit"
-          variant="default"
-          size="default"
-          className="ml-2 text-white bg-synjoint-blue hover:bg-synjoint-darkblue"
+          size="icon"
+          className="ml-1 h-8 w-8 bg-synjoint-blue hover:bg-synjoint-darkblue text-white p-0"
         >
-          Find
+          <Search className="h-4 w-4" />
         </Button>
       </form>
-      
+
       {showSuggestions && searchTerm && (
         <div
           ref={searchDropdownRef}
